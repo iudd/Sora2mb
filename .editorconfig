@@ -1,0 +1,16 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Windows batch files are easiest to interop with when saved with BOM + CRLF.
+[*.cmd]
+charset = utf-8-bom
+end_of_line = crlf
+
