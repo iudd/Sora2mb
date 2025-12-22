@@ -463,6 +463,7 @@ class Database:
                     token_id INTEGER,
                     username TEXT NOT NULL,
                     display_name TEXT NOT NULL,
+                    description TEXT,
                     character_id TEXT,
                     cameo_id TEXT,
                     avatar_path TEXT,
