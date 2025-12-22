@@ -623,12 +623,31 @@ class SoraClient:
 
     async def get_characters(self, token: str) -> List[Dict[str, Any]]:
         """Get all characters created by the user"""
-        result = await self._make_request("GET", "/project_y/characters", token)
-        # The API usually returns {"characters": [...]} or just a list
-        if isinstance(result, dict) and "characters" in result:
-            return result["characters"]
-        elif isinstance(result, list):
-            return result
+        # 尝试不同的端点，因为 API 可能会变动
+        endpoints = ["/project_y/cameos", "/project_y/profile/cameos", "/project_y/characters"]
+        
+        last_exception = None
+        for endpoint in endpoints:
+            try:
+                result = await self._make_request("GET", endpoint, token)
+                
+                if isinstance(result, dict):
+                    return result.get("cameos") or result.get("characters") or []
+                elif isinstance(result, list):
+                    return result
+            except Exception as e:
+                last_exception = e
+                # 如果是 404，尝试下一个端点
+                if "404" in str(e):
+                    continue
+                # 其他错误（如 401）直接抛出
+                raise e
+        
+        # 如果都失败了且都是 404，返回空列表或抛出异常
+        # 这里选择返回空列表，避免中断流程，但记录警告
+        if last_exception:
+            print(f"All character endpoints failed. Last error: {last_exception}")
+            
         return []
 
     async def delete_character(self, character_id: str, token: str) -> bool:
