@@ -13,9 +13,10 @@ from ..core.auth import AuthManager
 from ..core.config import config
 from ..services.token_manager import TokenManager
 from ..services.proxy_manager import ProxyManager
+from ..services.sora_client import SoraClient
 from ..services.concurrency_manager import ConcurrencyManager
 from ..core.database import Database
-from ..core.models import Token, AdminConfig, ProxyConfig
+from ..core.models import Token, AdminConfig, ProxyConfig, CharacterCard
 
 router = APIRouter()
 
@@ -877,6 +878,85 @@ async def create_batch_zip(request: BatchZipRequest, token: str = Depends(verify
     }
 
 # Character card endpoints
+@router.post("/api/characters/sync")
+async def sync_characters(token: str = Depends(verify_admin_token)):
+    """Sync characters from all active tokens to local database"""
+    try:
+        # Get active tokens
+        active_tokens = await token_manager.get_active_tokens()
+        if not active_tokens:
+            return {"success": True, "message": "No active tokens found", "synced_count": 0}
+
+        # Initialize SoraClient
+        client = SoraClient(proxy_manager)
+        
+        synced_count = 0
+        errors = []
+
+        # Ensure avatar directory exists
+        root_dir = Path(__file__).parent.parent.parent
+        avatar_dir = root_dir / "tmp" / "avatars"
+        avatar_dir.mkdir(parents=True, exist_ok=True)
+
+        for t in active_tokens:
+            try:
+                # Fetch characters from API
+                characters = await client.get_characters(t.token)
+                
+                for char in characters:
+                    char_id = char.get("id")
+                    if not char_id:
+                        continue
+
+                    # Check if already exists
+                    existing = await db.get_character_card_by_remote_id(char_id)
+                    if existing:
+                        continue
+
+                    # Download avatar
+                    avatar_url = char.get("profile_asset_url")
+                    avatar_path = None
+                    if avatar_url:
+                        try:
+                            avatar_data = await client.download_character_image(avatar_url)
+                            # Save to tmp/avatars/
+                            filename = f"{char_id}.webp"
+                            file_path = avatar_dir / filename
+                            with open(file_path, "wb") as f:
+                                f.write(avatar_data)
+                            avatar_path = f"/tmp/avatars/{filename}"
+                        except Exception as e:
+                            print(f"Failed to download avatar for {char_id}: {e}")
+                    
+                    # Create CharacterCard
+                    new_card = CharacterCard(
+                        token_id=t.id,
+                        username=char.get("username", ""),
+                        display_name=char.get("display_name", ""),
+                        description=char.get("description", ""),
+                        character_id=char_id,
+                        cameo_id=char.get("cameo_id"),
+                        avatar_path=avatar_path,
+                        source_video=None
+                    )
+                    
+                    await db.create_character_card(new_card)
+                    synced_count += 1
+
+            except Exception as e:
+                errors.append(f"Token {t.id} failed: {str(e)}")
+                continue
+
+        return {
+            "success": True, 
+            "message": f"Synced {synced_count} characters", 
+            "synced_count": synced_count,
+            "errors": errors
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
+
 @router.get("/api/characters", response_model=List[CharacterCardResponse])
 async def get_characters(token: str = Depends(verify_admin_token)):
     """List stored character cards"""

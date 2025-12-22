@@ -621,6 +621,16 @@ class SoraClient:
         result = await self._make_request("POST", "/project_y/file/upload", token, multipart=mp)
         return result.get("asset_pointer")
 
+    async def get_characters(self, token: str) -> List[Dict[str, Any]]:
+        """Get all characters created by the user"""
+        result = await self._make_request("GET", "/project_y/characters", token)
+        # The API usually returns {"characters": [...]} or just a list
+        if isinstance(result, dict) and "characters" in result:
+            return result["characters"]
+        elif isinstance(result, list):
+            return result
+        return []
+
     async def delete_character(self, character_id: str, token: str) -> bool:
         """Delete a character
 

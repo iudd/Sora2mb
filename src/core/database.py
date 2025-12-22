@@ -925,6 +925,16 @@ class Database:
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
 
+    async def get_character_card_by_remote_id(self, character_id: str) -> Optional[dict]:
+        """Get character card by remote character_id"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute("SELECT * FROM character_cards WHERE character_id = ?", (character_id,))
+            row = await cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+
     async def get_character_cards_by_usernames(self, usernames: List[str], token_id: int = None) -> List[dict]:
         """
         Fetch character cards matching the given usernames or display_names.
