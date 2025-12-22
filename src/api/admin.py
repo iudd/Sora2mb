@@ -921,8 +921,15 @@ async def sync_characters(token: str = Depends(verify_admin_token)):
                     else:
                         raise e
                 
+                # Handle different response formats
+                if isinstance(characters, dict) and "items" in characters:
+                    characters = characters["items"]
+                elif isinstance(characters, dict) and "characters" in characters:
+                    characters = characters["characters"]
+                
                 for char in characters:
-                    char_id = char.get("id")
+                    # Sora API returns 'user_id' as the character ID for characters
+                    char_id = char.get("user_id") or char.get("id")
                     if not char_id:
                         continue
 
@@ -932,7 +939,7 @@ async def sync_characters(token: str = Depends(verify_admin_token)):
                         continue
 
                     # Download avatar
-                    avatar_url = char.get("profile_asset_url")
+                    avatar_url = char.get("profile_picture_url") or char.get("profile_asset_url")
                     avatar_path = None
                     if avatar_url:
                         try:
