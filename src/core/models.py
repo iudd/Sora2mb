@@ -167,3 +167,16 @@ class ChatCompletionResponse(BaseModel):
     created: int
     model: str
     choices: List[ChatCompletionChoice]
+
+class CharacterCardResponse(BaseModel):
+    """Response model for character card list"""
+    id: int
+    token_id: Optional[int] = None
+    username: str
+    display_name: str
+    description: Optional[str] = None
+    character_id: Optional[str] = None
+    cameo_id: Optional[str] = None
+    avatar_path: Optional[str] = None
+    source_video: Optional[str] = None
+    created_at: Optional[datetime] = None

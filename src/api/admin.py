@@ -16,7 +16,7 @@ from ..services.proxy_manager import ProxyManager
 from ..services.sora_client import SoraClient
 from ..services.concurrency_manager import ConcurrencyManager
 from ..core.database import Database
-from ..core.models import Token, AdminConfig, ProxyConfig, CharacterCard
+from ..core.models import Token, AdminConfig, ProxyConfig, CharacterCard, CharacterCardResponse
 
 router = APIRouter()
 
