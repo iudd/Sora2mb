@@ -39,6 +39,12 @@ class DebugLogger:
         
         # Add handler
         self.logger.addHandler(file_handler)
+
+        # Create console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
         
         # Prevent propagation to root logger
         self.logger.propagate = False
