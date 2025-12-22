@@ -971,13 +971,21 @@ async def sync_characters(token: str = Depends(verify_admin_token)):
                         source_video=None
                     )
                     
+                    # Create CharacterCard
+                    print(f"Creating card for {char_id} ({new_card.display_name})...")
                     await db.create_character_card(new_card)
+                    print(f"Card created for {char_id}")
                     synced_count += 1
 
             except Exception as e:
-                errors.append(f"Token {t.id} failed: {str(e)}")
+                error_msg = f"Token {t.id} failed: {str(e)}"
+                print(error_msg)
+                import traceback
+                traceback.print_exc()
+                errors.append(error_msg)
                 continue
 
+        print(f"Sync complete. Total synced: {synced_count}. Errors: {errors}")
         return {
             "success": True, 
             "message": f"Synced {synced_count} characters", 
@@ -986,6 +994,9 @@ async def sync_characters(token: str = Depends(verify_admin_token)):
         }
 
     except Exception as e:
+        print(f"Sync fatal error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
 
 @router.get("/api/characters", response_model=List[CharacterCardResponse])
