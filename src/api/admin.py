@@ -938,6 +938,10 @@ async def sync_characters(token: str = Depends(verify_admin_token)):
                     # Check if already exists
                     existing = await db.get_character_card_by_remote_id(char_id)
                     if existing:
+                        # Update existing record if needed (e.g. avatar changed)
+                        # For now, we just skip to avoid duplicates, but we should log it
+                        print(f"Character {char_id} already exists, skipping...")
+                        # Optional: Update logic could go here
                         continue
 
                     # Download avatar
