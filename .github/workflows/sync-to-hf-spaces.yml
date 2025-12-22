@@ -20,7 +20,7 @@ jobs:
           import os
           # 1. 初始化 API
           api = HfApi(token=os.environ["HF_TOKEN"])
-          space_id = "iyougame/soramb"
+          space_id = "iyougame/soarmb"
           commit_message = f"Sync from GitHub: ${{ github.sha }}"
           # 2. 收集所有要上传的操作对象
           operations = []
