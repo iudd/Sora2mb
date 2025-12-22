@@ -901,7 +901,25 @@ async def sync_characters(token: str = Depends(verify_admin_token)):
         for t in active_tokens:
             try:
                 # Fetch characters from API
-                characters = await client.get_characters(t.token)
+                try:
+                    characters = await client.get_characters(t.token)
+                except Exception as e:
+                    # If 401, try to refresh token
+                    if "401" in str(e):
+                        print(f"Token {t.id} expired during sync, trying to refresh...")
+                        refreshed = await token_manager.auto_refresh_expiring_token(t.id, force=True)
+                        if refreshed:
+                            # Reload token
+                            updated_token = await db.get_token(t.id)
+                            if updated_token:
+                                print(f"Token {t.id} refreshed, retrying sync...")
+                                characters = await client.get_characters(updated_token.token)
+                            else:
+                                raise e
+                        else:
+                            raise Exception("Token expired and refresh failed")
+                    else:
+                        raise e
                 
                 for char in characters:
                     char_id = char.get("id")
