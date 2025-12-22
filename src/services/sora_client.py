@@ -5,6 +5,7 @@ import time
 import random
 import string
 import re
+import json
 from typing import Optional, Dict, Any, Tuple, List
 from curl_cffi.requests import AsyncSession
 from curl_cffi import CurlMime
@@ -621,17 +622,48 @@ class SoraClient:
         result = await self._make_request("POST", "/project_y/file/upload", token, multipart=mp)
         return result.get("asset_pointer")
 
+    def _extract_user_id_from_token(self, token: str) -> Optional[str]:
+        """Extract user_id from JWT token without verification"""
+        try:
+            # JWT is header.payload.signature
+            parts = token.split('.')
+            if len(parts) < 2:
+                return None
+            payload = parts[1]
+            # Add padding
+            payload += '=' * (-len(payload) % 4)
+            decoded = base64.urlsafe_b64decode(payload)
+            data = json.loads(decoded)
+            
+            # Try to find user_id in different places
+            # 1. OpenAI specific structure
+            auth_data = data.get("https://api.openai.com/auth", {})
+            if "user_id" in auth_data:
+                return auth_data["user_id"]
+            
+            # 2. Standard claims
+            if "user_id" in data:
+                return data["user_id"]
+            if "sub" in data and data["sub"].startswith("user-"):
+                return data["sub"]
+                
+            return None
+        except Exception as e:
+            print(f"Failed to extract user_id from token: {e}")
+            return None
+
     async def get_characters(self, token: str) -> List[Dict[str, Any]]:
         """Get all characters created by the user"""
         
-        # 1. Get user ID first to construct the correct endpoint
-        user_id = None
-        try:
-            user_info = await self.get_user_info(token)
-            # Sora API usually returns 'id' or 'user_id'
-            user_id = user_info.get("id") or user_info.get("user_id")
-        except Exception as e:
-            print(f"Failed to get user info for character sync: {e}")
+        # 1. Get user ID from token
+        user_id = self._extract_user_id_from_token(token)
+        if not user_id:
+            # Fallback to API call if token parsing fails
+            try:
+                user_info = await self.get_user_info(token)
+                user_id = user_info.get("id") or user_info.get("user_id")
+            except Exception as e:
+                print(f"Failed to get user info for character sync: {e}")
 
         # 2. Construct endpoints list
         endpoints = []

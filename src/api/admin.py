@@ -902,7 +902,9 @@ async def sync_characters(token: str = Depends(verify_admin_token)):
             try:
                 # Fetch characters from API
                 try:
+                    print(f"Syncing characters for token {t.id}...")
                     characters = await client.get_characters(t.token)
+                    print(f"Got {len(characters) if characters else 0} characters from API")
                 except Exception as e:
                     # If 401, try to refresh token
                     if "401" in str(e):
