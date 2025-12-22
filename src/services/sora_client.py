@@ -652,7 +652,8 @@ class SoraClient:
                 result = await self._make_request("GET", endpoint, token)
                 
                 if isinstance(result, dict):
-                    return result.get("cameos") or result.get("characters") or []
+                    # Add support for 'items' key which is used in the new API response
+                    return result.get("items") or result.get("cameos") or result.get("characters") or []
                 elif isinstance(result, list):
                     return result
             except Exception as e:
