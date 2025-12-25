@@ -1,6 +1,7 @@
 """Configuration management"""
 import tomli
 import toml
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -224,6 +225,33 @@ class Config:
         if "token_refresh" not in self._config:
             self._config["token_refresh"] = {}
         self._config["token_refresh"]["at_auto_refresh_enabled"] = enabled
+
+    # Google Drive 配置属性
+    @property
+    def google_drive_enabled(self) -> bool:
+        """Get Google Drive upload enabled status"""
+        return self._config.get("google_drive", {}).get("enabled", False)
+
+    @property
+    def google_drive_space_url(self) -> str:
+        """Get Google Drive Gradio Space URL"""
+        return self._config.get("google_drive", {}).get("space_url", "https://iyougame-url2drive.hf.space")
+
+    @property
+    def google_drive_password(self) -> str:
+        """Get Google Drive password from environment variable or config"""
+        # 优先从环境变量读取
+        env_password = os.getenv("GOOGLE_DRIVE_PASSWORD")
+        if env_password:
+            return env_password
+        # 否则从配置文件读取
+        return self._config.get("google_drive", {}).get("password", "")
+
+    def set_google_drive_enabled(self, enabled: bool):
+        """Set Google Drive upload enabled/disabled"""
+        if "google_drive" not in self._config:
+            self._config["google_drive"] = {}
+        self._config["google_drive"]["enabled"] = enabled
 
 # Global config instance
 config = Config()
