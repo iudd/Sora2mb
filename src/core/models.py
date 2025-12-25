@@ -1,7 +1,7 @@
 """Data models"""
 from datetime import datetime
 from typing import Optional, List, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Token(BaseModel):
     """Token model"""
@@ -145,6 +145,9 @@ class CharacterCard(BaseModel):
 class ChatMessage(BaseModel):
     role: str
     content: Union[str, List[dict]]  # Support both string and array format (OpenAI multimodal)
+    
+    class Config:
+        extra = "ignore"  # Ignore unknown fields (like 'name', 'function_call' etc)
 
 class ChatCompletionRequest(BaseModel):
     model: str
@@ -154,6 +157,14 @@ class ChatCompletionRequest(BaseModel):
     remix_target_id: Optional[str] = None  # Sora share link video ID for remix
     stream: bool = False
     max_tokens: Optional[int] = None
+    
+    class Config:
+        extra = "ignore"  # Critical: Ignore unknown fields like temperature, top_p, etc.
+
+class VideoSyncRequest(BaseModel):
+    """Request to manually sync and process the latest video"""
+    limit: int = 1  # How many latest videos to check/process (default: 1)
+    force_upload: bool = False  # If true, re-upload to drive even if already processed
 
 class ChatCompletionChoice(BaseModel):
     index: int
