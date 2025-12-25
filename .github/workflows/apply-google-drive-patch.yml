@@ -1,10 +1,10 @@
-name: Apply Google Drive Integration to hf-spaces
+name: Fix and Apply Google Drive Integration
 
 on:
   workflow_dispatch:  # 手动触发
 
 jobs:
-  apply-patch:
+  fix-and-apply:
     runs-on: ubuntu-latest
     
     steps:
@@ -12,23 +12,31 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: hf-spaces
+          fetch-depth: 0
           
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           
-      - name: Apply Google Drive integration patch
+      - name: Install dependencies
         run: |
-          python apply_google_drive_patch.py
+          pip install requests
+          
+      - name: Run fix script
+        run: |
+          python fix_generation_handler.py
           
       - name: Check if changes were made
         id: check_changes
         run: |
           if git diff --quiet src/services/generation_handler.py; then
             echo "changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No changes detected - file may already be fixed"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ Changes detected - will commit"
+            git diff --stat src/services/generation_handler.py
           fi
           
       - name: Commit changes
@@ -37,7 +45,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add src/services/generation_handler.py
-          git commit -m "feat: 自动应用 Google Drive 上传集成"
+          git commit -m "fix: 恢复 generation_handler.py 并集成 Google Drive 上传"
           
       - name: Push changes to hf-spaces
         if: steps.check_changes.outputs.changed == 'true'
@@ -45,3 +53,14 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: hf-spaces
+          
+      - name: Success summary
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          echo "🎉 Successfully applied Google Drive integration!"
+          echo ""
+          echo "Changes:"
+          echo "  ✅ Restored original generation_handler.py"
+          echo "  ✅ Added GoogleDriveUploader import"
+          echo "  ✅ Added google_drive_uploader initialization"
+          echo "  ✅ Modified cache logic to support Google Drive upload"
