@@ -527,7 +527,7 @@ class GenerationHandler:
             if image:
                 if stream:
                     yield self._format_stream_chunk(
-                        reasoning_content="**Image Upload Begins**\n\nUploading image to server...\n",
+                        reasoning_content="**Image Upload Begins**\\n\\nUploading image to server...\\n",
                         is_first=is_first_chunk
                     )
                     is_first_chunk = False
@@ -537,20 +537,20 @@ class GenerationHandler:
 
                 if stream:
                     yield self._format_stream_chunk(
-                        reasoning_content="Image uploaded successfully. Proceeding to generation...\n"
+                        reasoning_content="Image uploaded successfully. Proceeding to generation...\\n"
                     )
 
             # Generate
             if stream:
                 if is_first_chunk:
                     yield self._format_stream_chunk(
-                        reasoning_content="**Generation Process Begins**\n\nInitializing generation request...\n",
+                        reasoning_content="**Generation Process Begins**\\n\\nInitializing generation request...\\n",
                         is_first=True
                     )
                     is_first_chunk = False
                 else:
                     yield self._format_stream_chunk(
-                        reasoning_content="**Generation Process Begins**\n\nInitializing generation request...\n"
+                        reasoning_content="**Generation Process Begins**\\n\\nInitializing generation request...\\n"
                     )
             
             if is_video:
@@ -562,7 +562,7 @@ class GenerationHandler:
                     # Storyboard mode（尝试 cameo）
                     if stream:
                         yield self._format_stream_chunk(
-                            reasoning_content="Detected storyboard format. Converting to storyboard API format...\n"
+                            reasoning_content="Detected storyboard format. Converting to storyboard API format...\\n"
                         )
 
                     formatted_prompt = self.sora_client.format_storyboard_prompt(final_prompt)
@@ -754,7 +754,7 @@ class GenerationHandler:
                                 last_status_output_time = current_time
                                 debug_logger.log_info(f"Task {task_id} progress: {progress_pct}% (status: {status})")
                                 yield self._format_stream_chunk(
-                                    reasoning_content=f"**Video Generation Progress**: {progress_pct}% ({status})\n"
+                                    reasoning_content=f"**Video Generation Progress**: {progress_pct}% ({status})\\n"
                                 )
                             break
 
@@ -800,13 +800,13 @@ class GenerationHandler:
                                     # 流式返回提示
                                     if stream:
                                         yield self._format_stream_chunk(
-                                            reasoning_content=f"**Content Policy Violation**\n\n{reason_str}\n"
+                                            reasoning_content=f"**Content Policy Violation**\\n\\n{reason_str}\\n"
                                         )
                                         yield self._format_stream_chunk(
                                             content=f"❌ 生成失败: {reason_str}",
                                             finish_reason="STOP"
                                         )
-                                        yield "data: [DONE]\n\n"
+                                        yield "data: [DONE]\\n\\n"
 
                                     # 违规时立即停止轮询
                                     return
@@ -835,9 +835,9 @@ class GenerationHandler:
                                     if stream:
                                         yield self._format_stream_chunk(
                                             reasoning_content=(
-                                                "**Video Generation Completed**\n\n"
-                                                "Watermark-free mode enabled. Waiting for watermark-free output (may take a while).\n"
-                                                "Tip: if it takes too long, click 'Cancel watermark-free waiting' in the task card.\n"
+                                                "**Video Generation Completed**\\n\\n"
+                                                "Watermark-free mode enabled. Waiting for watermark-free output (may take a while).\\n"
+                                                "Tip: if it takes too long, click 'Cancel watermark-free waiting' in the task card.\\n"
                                             ),
                                             extra={
                                                 "wm": {
@@ -866,7 +866,7 @@ class GenerationHandler:
                                                 local_url = original_url
                                                 if stream:
                                                     yield self._format_stream_chunk(
-                                                        reasoning_content="Watermark-free waiting cancelled. Returning original (may be watermarked) video URL.\n",
+                                                        reasoning_content="Watermark-free waiting cancelled. Returning original (may be watermarked) video URL.\\n",
                                                         extra={
                                                             "wm": {
                                                                 "stage": "cancelled",
@@ -895,7 +895,7 @@ class GenerationHandler:
                                                         raise Exception("Custom parse server URL or token not configured")
                                                     if stream:
                                                         yield self._format_stream_chunk(
-                                                            reasoning_content=f"Video published successfully. Post ID: {post_id}\nUsing custom parse server to get watermark-free URL...\n",
+                                                            reasoning_content=f"Video published successfully. Post ID: {post_id}\\nUsing custom parse server to get watermark-free URL...\\n",
                                                             extra={
                                                                 "wm": {
                                                                     "stage": "parse",
@@ -921,8 +921,8 @@ class GenerationHandler:
                                                 if stream:
                                                     yield self._format_stream_chunk(
                                                         reasoning_content=(
-                                                            f"Video published successfully. Post ID: {post_id}\n"
-                                                            f"Now {'caching' if config.cache_enabled else 'preparing'} watermark-free video...\n"
+                                                            f"Video published successfully. Post ID: {post_id}\\n"
+                                                            f"Now {'caching' if config.cache_enabled else 'preparing'} watermark-free video...\\n"
                                                         ),
                                                         extra={
                                                             "wm": {
@@ -961,7 +961,7 @@ class GenerationHandler:
                                                     if stream:
                                                         hint = f"HTTP {status_code}" if status_code else (last_err or "unknown")
                                                         yield self._format_stream_chunk(
-                                                            reasoning_content=f"Watermark-free file not ready ({hint}), waiting... (attempt {wm_attempt})\n",
+                                                            reasoning_content=f"Watermark-free file not ready ({hint}), waiting... (attempt {wm_attempt})\\n",
                                                             extra={
                                                                 "wm": {
                                                                     "stage": "waiting",
@@ -981,8 +981,8 @@ class GenerationHandler:
                                                 if stream:
                                                     yield self._format_stream_chunk(
                                                         reasoning_content=(
-                                                            f"Watermark-free URL is ready (checked {ready_checks} times).\n"
-                                                            f"Now {'caching' if config.cache_enabled else 'returning'} watermark-free video...\n"
+                                                            f"Watermark-free URL is ready (checked {ready_checks} times).\\n"
+                                                            f"Now {'caching' if config.cache_enabled else 'returning'} watermark-free video...\\n"
                                                         ),
                                                         extra={
                                                             "wm": {
@@ -998,7 +998,7 @@ class GenerationHandler:
                                                     try:
                                                         if stream:
                                                             yield self._format_stream_chunk(
-                                                                reasoning_content="Uploading watermark-free video to Google Drive...\n"
+                                                                reasoning_content="Uploading watermark-free video to Google Drive...\\n"
                                                             )
                                                         
                                                         # Upload to Google Drive via Gradio API
@@ -1007,7 +1007,7 @@ class GenerationHandler:
                                                         if local_url:
                                                             if stream:
                                                                 yield self._format_stream_chunk(
-                                                                    reasoning_content=f"✅ Video uploaded to Google Drive successfully!\n"
+                                                                    reasoning_content=f"✅ Video uploaded to Google Drive successfully!\\n"
                                                                 )
                                                             
                                                             # Delete the published post after upload (best-effort)
@@ -1026,7 +1026,7 @@ class GenerationHandler:
                                                             local_url = watermark_free_url
                                                             if stream:
                                                                 yield self._format_stream_chunk(
-                                                                    reasoning_content="Warning: Google Drive upload failed. Using watermark-free URL instead...\n"
+                                                                    reasoning_content="Warning: Google Drive upload failed. Using watermark-free URL instead...\\n"
                                                                 )
                                                     except Exception as upload_error:
                                                         # Fallback to watermark-free URL if upload fails
@@ -1034,8 +1034,8 @@ class GenerationHandler:
                                                         if stream:
                                                             yield self._format_stream_chunk(
                                                                 reasoning_content=(
-                                                                    f"Warning: Failed to upload to Google Drive - {str(upload_error)}\n"
-                                                                    "Using original watermark-free URL instead...\n"
+                                                                    f"Warning: Failed to upload to Google Drive - {str(upload_error)}\\n"
+                                                                    "Using original watermark-free URL instead...\\n"
                                                                 )
                                                             )
                                                 elif config.cache_enabled:
@@ -1045,7 +1045,7 @@ class GenerationHandler:
                                                         local_url = f"{self._get_base_url()}/tmp/{cached_filename}"
                                                         if stream:
                                                             yield self._format_stream_chunk(
-                                                                reasoning_content="Watermark-free video cached successfully. Preparing final response...\n"
+                                                                reasoning_content="Watermark-free video cached successfully. Preparing final response...\\n"
                                                             )
 
                                                         # Delete the published post after caching (best-effort)
@@ -1065,8 +1065,8 @@ class GenerationHandler:
                                                         if stream:
                                                             yield self._format_stream_chunk(
                                                                 reasoning_content=(
-                                                                    f"Warning: Failed to cache file - {str(cache_error)}\n"
-                                                                    "Using original watermark-free URL instead...\n"
+                                                                    f"Warning: Failed to cache file - {str(cache_error)}\\n"
+                                                                    "Using original watermark-free URL instead...\\n"
                                                                 )
                                                             )
                                                 else:
@@ -1074,7 +1074,7 @@ class GenerationHandler:
                                                     local_url = watermark_free_url
                                                     if stream:
                                                         yield self._format_stream_chunk(
-                                                            reasoning_content="Cache is disabled. Using watermark-free URL directly...\n"
+                                                            reasoning_content="Cache is disabled. Using watermark-free URL directly...\\n"
                                                         )
 
                                                 break  # success
@@ -1092,8 +1092,8 @@ class GenerationHandler:
                                                 if stream:
                                                     yield self._format_stream_chunk(
                                                         reasoning_content=(
-                                                            f"Watermark-free step error (attempt {wm_attempt}): {str(publish_error)}\n"
-                                                            f"Retrying in {backoff_s:.1f}s...\n"
+                                                            f"Watermark-free step error (attempt {wm_attempt}): {str(publish_error)}\\n"
+                                                            f"Retrying in {backoff_s:.1f}s...\\n"
                                                         ),
                                                         extra={
                                                             "wm": {
@@ -1121,7 +1121,7 @@ class GenerationHandler:
                                         if config.cache_enabled:
                                             if stream:
                                                 yield self._format_stream_chunk(
-                                                    reasoning_content="**Video Generation Completed**\n\nVideo generation successful. Now caching the video file...\n"
+                                                    reasoning_content="**Video Generation Completed**\\n\\nVideo generation successful. Now caching the video file...\\n"
                                                 )
 
                                             try:
@@ -1129,21 +1129,21 @@ class GenerationHandler:
                                                 local_url = f"{self._get_base_url()}/tmp/{cached_filename}"
                                                 if stream:
                                                     yield self._format_stream_chunk(
-                                                        reasoning_content="Video file cached successfully. Preparing final response...\n"
+                                                        reasoning_content="Video file cached successfully. Preparing final response...\\n"
                                                     )
                                             except Exception as cache_error:
                                                 # Fallback to original URL if caching fails
                                                 local_url = url
                                                 if stream:
                                                     yield self._format_stream_chunk(
-                                                        reasoning_content=f"Warning: Failed to cache file - {str(cache_error)}\nUsing original URL instead...\n"
+                                                        reasoning_content=f"Warning: Failed to cache file - {str(cache_error)}\\nUsing original URL instead...\\n"
                                                     )
                                         else:
                                             # Cache disabled: use original URL directly
                                             local_url = url
                                             if stream:
                                                 yield self._format_stream_chunk(
-                                                    reasoning_content="**Video Generation Completed**\n\nCache is disabled. Using original URL directly...\n"
+                                                    reasoning_content="**Video Generation Completed**\\n\\nCache is disabled. Using original URL directly...\\n"
                                                 )
 
                                 # Task completed
@@ -1155,7 +1155,7 @@ class GenerationHandler:
                                 if stream:
                                     # Final response with content + 结构化 output
                                     yield self._format_stream_chunk(
-                                        content=f"```html\n<video src='{local_url}' controls></video>\n```",
+                                        content=f"```html\\n<video src='{local_url}' controls></video>\\n```",
                                         finish_reason="STOP",
                                         extra={
                                             "output": [{
@@ -1165,7 +1165,7 @@ class GenerationHandler:
                                             }]
                                         }
                                     )
-                                    yield "data: [DONE]\n\n"
+                                    yield "data: [DONE]\\n\\n"
                                 return
                 else:
                     result = await self.sora_client.get_image_tasks(token)
@@ -1188,7 +1188,7 @@ class GenerationHandler:
                                     # Cache image files
                                     if stream:
                                         yield self._format_stream_chunk(
-                                            reasoning_content=f"**Image Generation Completed**\n\nImage generation successful. Now caching {len(urls)} image(s)...\n"
+                                            reasoning_content=f"**Image Generation Completed**\\n\\nImage generation successful. Now caching {len(urls)} image(s)...\\n"
                                         )
 
                                     base_url = self._get_base_url()
@@ -1203,26 +1203,26 @@ class GenerationHandler:
                                                 local_urls.append(local_url)
                                                 if stream and len(urls) > 1:
                                                     yield self._format_stream_chunk(
-                                                        reasoning_content=f"Cached image {idx + 1}/{len(urls)}...\n"
+                                                        reasoning_content=f"Cached image {idx + 1}/{len(urls)}...\\n"
                                                     )
                                             except Exception as cache_error:
                                                 # Fallback to original URL if caching fails
                                                 local_urls.append(url)
                                                 if stream:
                                                     yield self._format_stream_chunk(
-                                                        reasoning_content=f"Warning: Failed to cache image {idx + 1} - {str(cache_error)}\nUsing original URL instead...\n"
+                                                        reasoning_content=f"Warning: Failed to cache image {idx + 1} - {str(cache_error)}\\nUsing original URL instead...\\n"
                                                     )
 
                                         if stream and all(u.startswith(base_url) for u in local_urls):
                                             yield self._format_stream_chunk(
-                                                reasoning_content="All images cached successfully. Preparing final response...\n"
+                                                reasoning_content="All images cached successfully. Preparing final response...\\n"
                                             )
                                     else:
                                         # Cache disabled: use original URLs directly
                                         local_urls = urls
                                         if stream:
                                             yield self._format_stream_chunk(
-                                                reasoning_content="Cache is disabled. Using original URLs directly...\n"
+                                                reasoning_content="Cache is disabled. Using original URLs directly...\\n"
                                             )
 
                                     await self.db.update_task(
@@ -1232,7 +1232,7 @@ class GenerationHandler:
 
                                     if stream:
                                         # Final response with content (Markdown format) + 结构化 output
-                                        content_markdown = "\n".join([f"![Generated Image]({url})" for url in local_urls])
+                                        content_markdown = "\\n".join([f"![Generated Image]({url})" for url in local_urls])
                                         yield self._format_stream_chunk(
                                             content=content_markdown,
                                             finish_reason="STOP",
@@ -1243,7 +1243,7 @@ class GenerationHandler:
                                                 ]
                                             }
                                         )
-                                        yield "data: [DONE]\n\n"
+                                        yield "data: [DONE]\\n\\n"
                                     return
 
                             elif status == "failed":
@@ -1259,7 +1259,7 @@ class GenerationHandler:
 
                                     if stream:
                                         yield self._format_stream_chunk(
-                                            reasoning_content=f"**Processing**\n\nGeneration in progress: {progress:.0f}% completed...\n"
+                                            reasoning_content=f"**Processing**\\n\\nGeneration in progress: {progress:.0f}% completed...\\n"
                                         )
 
                     # For image generation, send heartbeat every 10 seconds if no progress update
@@ -1269,7 +1269,7 @@ class GenerationHandler:
                             last_heartbeat_time = current_time
                             elapsed = int(current_time - start_time)
                             yield self._format_stream_chunk(
-                                reasoning_content=f"Image generation in progress... ({elapsed}s elapsed)\n"
+                                reasoning_content=f"Image generation in progress... ({elapsed}s elapsed)\\n"
                             )
 
                     # If task not found in response, send heartbeat for image generation
@@ -1279,7 +1279,7 @@ class GenerationHandler:
                             last_heartbeat_time = current_time
                             elapsed = int(current_time - start_time)
                             yield self._format_stream_chunk(
-                                reasoning_content=f"Image generation in progress... ({elapsed}s elapsed)\n"
+                                reasoning_content=f"Image generation in progress... ({elapsed}s elapsed)\\n"
                             )
 
                 # Progress update for stream mode (fallback if no status from API)
@@ -1288,7 +1288,7 @@ class GenerationHandler:
                     if estimated_progress > last_progress + 20:  # Update every 20%
                         last_progress = estimated_progress
                         yield self._format_stream_chunk(
-                            reasoning_content=f"**Processing**\n\nGeneration in progress: {estimated_progress:.0f}% completed (estimated)...\n"
+                            reasoning_content=f"**Processing**\\n\\nGeneration in progress: {estimated_progress:.0f}% completed (estimated)...\\n"
                         )
             
             except Exception as e:
@@ -1372,7 +1372,7 @@ class GenerationHandler:
             response["usage"]["completion_tokens"] = 1
             response["usage"]["total_tokens"] = 1
 
-        return f'data: {json.dumps(response)}\n\n'
+        return f'data: {json.dumps(response)}\\n\\n'
     
     def _format_non_stream_response(self, content: str, media_type: str = None, is_availability_check: bool = False) -> str:
         """Format non-streaming response
@@ -1385,7 +1385,7 @@ class GenerationHandler:
         if not is_availability_check:
             # Generation response with media
             if media_type == "video":
-                content = f"```html\n<video src='{content}' controls></video>\n```"
+                content = f"```html\\n<video src='{content}' controls></video>\\n```"
             else:
                 content = f"![Generated Image]({content})"
 
@@ -1454,7 +1454,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=True)
 
             yield self._format_stream_chunk(
-                reasoning_content="**Character Creation Begins**\n\nInitializing character creation...\n",
+                reasoning_content="**Character Creation Begins**\\n\\nInitializing character creation...\\n",
                 is_first=True
             )
 
@@ -1462,7 +1462,7 @@ class GenerationHandler:
             if isinstance(video_data, str):
                 # It's a URL, download it
                 yield self._format_stream_chunk(
-                    reasoning_content="Downloading video file...\n"
+                    reasoning_content="Downloading video file...\\n"
                 )
                 video_bytes = await self._download_file(video_data)
             else:
@@ -1470,14 +1470,14 @@ class GenerationHandler:
 
             # Step 1: Upload video
             yield self._format_stream_chunk(
-                reasoning_content="Uploading video file...\n"
+                reasoning_content="Uploading video file...\\n"
             )
             cameo_id = await self.sora_client.upload_character_video(video_bytes, token_obj.token)
             debug_logger.log_info(f"Video uploaded, cameo_id: {cameo_id}")
 
             # Step 2: Poll for character processing
             yield self._format_stream_chunk(
-                reasoning_content="Processing video to extract character...\n"
+                reasoning_content="Processing video to extract character...\\n"
             )
             cameo_status = await self._poll_cameo_status(cameo_id, token_obj.token)
             debug_logger.log_info(f"Cameo status: {cameo_status}")
@@ -1491,12 +1491,12 @@ class GenerationHandler:
 
             # Output character name immediately
             yield self._format_stream_chunk(
-                reasoning_content=f"✨ 角色已识别: {display_name} (@{username})\n"
+                reasoning_content=f"✨ 角色已识别: {display_name} (@{username})\\n"
             )
 
             # Step 3: Download and cache avatar
             yield self._format_stream_chunk(
-                reasoning_content="Downloading character avatar...\n"
+                reasoning_content="Downloading character avatar...\\n"
             )
             profile_asset_url = cameo_status.get("profile_asset_url")
             if not profile_asset_url:
@@ -1507,14 +1507,14 @@ class GenerationHandler:
 
             # Step 4: Upload avatar
             yield self._format_stream_chunk(
-                reasoning_content="Uploading character avatar...\n"
+                reasoning_content="Uploading character avatar...\\n"
             )
             asset_pointer = await self.sora_client.upload_character_image(avatar_data, token_obj.token)
             debug_logger.log_info(f"Avatar uploaded, asset_pointer: {asset_pointer}")
 
             # Step 5: Finalize character
             yield self._format_stream_chunk(
-                reasoning_content="Finalizing character creation...\n"
+                reasoning_content="Finalizing character creation...\\n"
             )
             # instruction_set_hint is a string, but instruction_set in cameo_status might be an array
             instruction_set = cameo_status.get("instruction_set_hint") or cameo_status.get("instruction_set")
@@ -1531,7 +1531,7 @@ class GenerationHandler:
 
             # Step 6: Set character as public
             yield self._format_stream_chunk(
-                reasoning_content="Setting character as public...\n"
+                reasoning_content="Setting character as public...\\n"
             )
             await self.sora_client.set_character_public(cameo_id, token_obj.token)
             debug_logger.log_info(f"Character set as public")
@@ -1541,7 +1541,7 @@ class GenerationHandler:
             # Persist character card locally，携带 instruction_set 作为描述，方便前端直接注入角色设定
             desc_text = instruction_set
             if isinstance(desc_text, list):
-                desc_text = "\n".join(str(x) for x in desc_text)
+                desc_text = "\\n".join(str(x) for x in desc_text)
             cn_alias = self._generate_cn_alias(display_name, desc_text)
             card_id = await self.db.create_character_card(CharacterCard(
                 token_id=token_obj.id,
@@ -1571,7 +1571,7 @@ class GenerationHandler:
             }
             yield self._format_stream_chunk(
                 content=json.dumps(card_payload),
-                reasoning_content="角色卡已保存并推送到前端。\n"
+                reasoning_content="角色卡已保存并推送到前端。\\n"
             )
 
             # Step 7: Return success message
@@ -1579,7 +1579,7 @@ class GenerationHandler:
                 content=f"角色创建成功，角色名@{username}",
                 finish_reason="STOP"
             )
-            yield "data: [DONE]\n\n"
+            yield "data: [DONE]\\n\\n"
 
             # Record success
             await self.token_manager.record_success(token_obj.id, is_video=True)
@@ -1599,7 +1599,7 @@ class GenerationHandler:
                 reasoning_content=error_message,
                 finish_reason="STOP"
             )
-            yield "data: [DONE]\n\n"
+            yield "data: [DONE]\\n\\n"
             return
         finally:
             if self.concurrency_manager and concurrency_acquired:
@@ -1636,7 +1636,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=True)
 
             yield self._format_stream_chunk(
-                reasoning_content="**Character Creation and Video Generation Begins**\n\nInitializing...\n",
+                reasoning_content="**Character Creation and Video Generation Begins**\\n\\nInitializing...\\n",
                 is_first=True
             )
 
@@ -1644,7 +1644,7 @@ class GenerationHandler:
             if isinstance(video_data, str):
                 # It's a URL, download it
                 yield self._format_stream_chunk(
-                    reasoning_content="Downloading video file...\n"
+                    reasoning_content="Downloading video file...\\n"
                 )
                 video_bytes = await self._download_file(video_data)
             else:
@@ -1652,14 +1652,14 @@ class GenerationHandler:
 
             # Step 1: Upload video
             yield self._format_stream_chunk(
-                reasoning_content="Uploading video file...\n"
+                reasoning_content="Uploading video file...\\n"
             )
             cameo_id = await self.sora_client.upload_character_video(video_bytes, token_obj.token)
             debug_logger.log_info(f"Video uploaded, cameo_id: {cameo_id}")
 
             # Step 2: Poll for character processing
             yield self._format_stream_chunk(
-                reasoning_content="Processing video to extract character...\n"
+                reasoning_content="Processing video to extract character...\\n"
             )
             cameo_status = await self._poll_cameo_status(cameo_id, token_obj.token)
             debug_logger.log_info(f"Cameo status: {cameo_status}")
@@ -1673,12 +1673,12 @@ class GenerationHandler:
 
             # Output character name immediately
             yield self._format_stream_chunk(
-                reasoning_content=f"✨ 角色已识别: {display_name} (@{username})\n"
+                reasoning_content=f"✨ 角色已识别: {display_name} (@{username})\\n"
             )
 
             # Step 3: Download and cache avatar
             yield self._format_stream_chunk(
-                reasoning_content="Downloading character avatar...\n"
+                reasoning_content="Downloading character avatar...\\n"
             )
             profile_asset_url = cameo_status.get("profile_asset_url")
             if not profile_asset_url:
@@ -1689,14 +1689,14 @@ class GenerationHandler:
 
             # Step 4: Upload avatar
             yield self._format_stream_chunk(
-                reasoning_content="Uploading character avatar...\n"
+                reasoning_content="Uploading character avatar...\\n"
             )
             asset_pointer = await self.sora_client.upload_character_image(avatar_data, token_obj.token)
             debug_logger.log_info(f"Avatar uploaded, asset_pointer: {asset_pointer}")
 
             # Step 5: Finalize character
             yield self._format_stream_chunk(
-                reasoning_content="Finalizing character creation...\n"
+                reasoning_content="Finalizing character creation...\\n"
             )
             # instruction_set_hint is a string, but instruction_set in cameo_status might be an array
             instruction_set = cameo_status.get("instruction_set_hint") or cameo_status.get("instruction_set")
@@ -1715,7 +1715,7 @@ class GenerationHandler:
             avatar_path = self._save_avatar_file(avatar_data, username)
             desc_text = instruction_set
             if isinstance(desc_text, list):
-                desc_text = "\n".join(str(x) for x in desc_text)
+                desc_text = "\\n".join(str(x) for x in desc_text)
             cn_alias = self._generate_cn_alias(display_name, desc_text)
             card_id = await self.db.create_character_card(CharacterCard(
                 token_id=token_obj.id,
@@ -1744,12 +1744,12 @@ class GenerationHandler:
             }
             yield self._format_stream_chunk(
                 content=json.dumps(card_payload),
-                reasoning_content="角色卡已保存并推送到前端。\n"
+                reasoning_content="角色卡已保存并推送到前端。\\n"
             )
 
             # Step 6: Generate video with character
             yield self._format_stream_chunk(
-                reasoning_content="**Video Generation Process Begins**\n\nGenerating video with character...\n"
+                reasoning_content="**Video Generation Process Begins**\\n\\nGenerating video with character...\\n"
             )
 
             # Prepend @username to prompt
@@ -1831,7 +1831,7 @@ class GenerationHandler:
             await self.token_manager.record_usage(token_obj.id, is_video=True)
 
             yield self._format_stream_chunk(
-                reasoning_content="**Remix Generation Process Begins**\n\nInitializing remix request...\n",
+                reasoning_content="**Remix Generation Process Begins**\\n\\nInitializing remix request...\\n",
                 is_first=True
             )
 
@@ -1843,7 +1843,7 @@ class GenerationHandler:
 
             # Call remix API
             yield self._format_stream_chunk(
-                reasoning_content="Sending remix request to server...\n"
+                reasoning_content="Sending remix request to server...\\n"
             )
             task_id = await self.sora_client.remix_video(
                 remix_target_id=remix_target_id,
