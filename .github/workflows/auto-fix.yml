@@ -1,0 +1,53 @@
+name: Auto Fix Generation Handler
+
+on:
+  push:
+    branches:
+      - main  # 当 main 分支更新时触发
+  workflow_dispatch:
+
+jobs:
+  fix-hf-spaces:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout hf-spaces branch
+        uses: actions/checkout@v3
+        with:
+          ref: hf-spaces
+          fetch-depth: 0
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: pip install requests
+          
+      - name: Run fix script
+        run: |
+          # 确保脚本存在
+          if [ ! -f fix_generation_handler.py ]; then
+            echo "Downloading fix script..."
+            curl -O https://raw.githubusercontent.com/iudd/Sora2mb/hf-spaces/fix_generation_handler.py
+          fi
+          
+          echo "Running fix script..."
+          python fix_generation_handler.py
+          
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          if git diff --quiet src/services/generation_handler.py; then
+            echo "No changes needed."
+          else
+            echo "Changes detected, committing..."
+            git add src/services/generation_handler.py
+            git commit -m "fix: 自动修复 generation_handler.py 并集成 Google Drive"
+            git push origin hf-spaces
+          fi
