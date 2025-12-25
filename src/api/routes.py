@@ -6,7 +6,7 @@ from typing import List
 import json
 import re
 from ..core.auth import verify_api_key_header
-from ..core.models import ChatCompletionRequest
+from ..core.models import ChatCompletionRequest, VideoSyncRequest
 from ..services.generation_handler import GenerationHandler, MODEL_CONFIG
 
 router = APIRouter()
@@ -275,3 +275,21 @@ async def cancel_watermark_wait(
         raise HTTPException(status_code=404, detail="Task not found or not waiting for watermark-free")
 
     return {"success": True, "task_id": task_id}
+
+@router.post("/v1/videos/sync")
+async def sync_latest_video(
+    request: VideoSyncRequest,
+    api_key: str = Depends(verify_api_key_header)
+):
+    """Sync latest video(s) from Sora account."""
+    if not generation_handler:
+        raise HTTPException(status_code=500, detail="Generation handler not initialized")
+
+    if request.stream:
+        return StreamingResponse(
+            generation_handler.sync_latest_video(limit=request.limit, stream=True),
+            media_type="text/event-stream"
+        )
+    else:
+        # TODO: Implement non-streaming response if needed
+        return {"status": "started", "message": "Streaming is required for sync endpoint currently"}
