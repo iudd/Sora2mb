@@ -125,7 +125,8 @@ class Config:
         """Set admin username from database"""
         self._admin_username = username
 
-    @property\n    def sora_base_url(self) -> str:
+    @property
+    def sora_base_url(self) -> str:
         return _get_env("SORA_BASE_URL") or self._config["sora"]["base_url"]
     
     @property
@@ -289,7 +290,7 @@ class Config:
     @property
     def watermark_free_enabled(self) -> bool:
         """Get watermark-free mode enabled status"""
-        return _get_env("WATERMARK_FREE_ENABLED", self._config.get("watermark_free", {}).get("watermark_free_enabled", True), bool) # Changed default to True
+        return _get_env("WATERMARK_FREE_ENABLED", self._config.get("watermark_free", {}).get("watermark_free_enabled", True), bool)
 
     def set_watermark_free_enabled(self, enabled: bool):
         """Set watermark-free mode enabled/disabled"""
@@ -334,7 +335,7 @@ class Config:
     @property
     def google_drive_enabled(self) -> bool:
         """Get Google Drive upload enabled status"""
-        return _get_env("GOOGLE_DRIVE_ENABLED", self._config.get("google_drive", {}).get("enabled", True), bool) # Changed default to True
+        return _get_env("GOOGLE_DRIVE_ENABLED", self._config.get("google_drive", {}).get("enabled", True), bool)
 
     @property
     def google_drive_space_url(self) -> str:
