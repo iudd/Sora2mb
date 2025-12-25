@@ -1,0 +1,62 @@
+name: Auto Fix Generation Handler (Trigger on Push)
+
+on:
+  push:
+    paths:
+      - '.github/workflows/auto-fix-generation-handler.yml'  # 只要这个文件更新，就会触发
+
+jobs:
+  fix-and-apply:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout hf-spaces branch
+        uses: actions/checkout@v3
+        with:
+          ref: hf-spaces
+          fetch-depth: 0
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          pip install requests
+          
+      - name: Run fix script
+        run: |
+          python fix_generation_handler.py
+          
+      - name: Check if changes were made
+        id: check_changes
+        run: |
+          if git diff --quiet src/services/generation_handler.py; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No changes detected - file may already be fixed"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✅ Changes detected - will commit"
+            git diff --stat src/services/generation_handler.py
+          fi
+          
+      - name: Commit changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add src/services/generation_handler.py
+          git commit -m "fix: 恢复 generation_handler.py 并集成 Google Drive 上传"
+          
+      - name: Push changes to hf-spaces
+        if: steps.check_changes.outputs.changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: hf-spaces
+          
+      - name: Success summary
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          echo "🎉 Successfully applied Google Drive integration!"
