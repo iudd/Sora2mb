@@ -1,0 +1,55 @@
+--- a/src/services/generation_handler.py
++++ b/src/services/generation_handler.py
+@@ -654,7 +654,53 @@
+                                                     )
+ 
+-                                                # 4) Cache watermark-free video (if cache enabled)
+-                                                if config.cache_enabled:
++                                                # 4) Upload to Google Drive or cache locally
++                                                if config.google_drive_enabled:
++                                                    try:
++                                                        if stream:
++                                                            yield self._format_stream_chunk(
++                                                                reasoning_content="Uploading watermark-free video to Google Drive...\\n"
++                                                            )
++                                                        
++                                                        # Upload to Google Drive via Gradio API
++                                                        local_url = await self.google_drive_uploader.upload_file_via_api(watermark_free_url)
++                                                        
++                                                        if local_url:
++                                                            if stream:
++                                                                yield self._format_stream_chunk(
++                                                                    reasoning_content=f"✅ Video uploaded to Google Drive successfully!\\n"
++                                                                )
++                                                            
++                                                            # Delete the published post after upload (best-effort)
++                                                            try:
++                                                                debug_logger.log_info(f"Deleting published post: {post_id}")
++                                                                await self.sora_client.delete_post(post_id, token)
++                                                                debug_logger.log_info(f"Published post deleted successfully: {post_id}")
++                                                            except Exception as delete_error:
++                                                                debug_logger.log_error(
++                                                                    error_message=f"Failed to delete published post {post_id}: {str(delete_error)}",
++                                                                    status_code=500,
++                                                                    response_text=str(delete_error)
++                                                                )
++                                                        else:
++                                                            # Fallback to watermark-free URL if upload fails
++                                                            local_url = watermark_free_url
++                                                            if stream:
++                                                                yield self._format_stream_chunk(
++                                                                    reasoning_content="Warning: Google Drive upload failed. Using watermark-free URL instead...\\n"
++                                                                )
++                                                    except Exception as upload_error:
++                                                        # Fallback to watermark-free URL if upload fails
++                                                        local_url = watermark_free_url
++                                                        if stream:
++                                                            yield self._format_stream_chunk(
++                                                                reasoning_content=(
++                                                                    f"Warning: Failed to upload to Google Drive - {str(upload_error)}\\n"
++                                                                    "Using original watermark-free URL instead...\\n"
++                                                                )
++                                                            )
++                                                elif config.cache_enabled:
++                                                    # 原来的本地缓存逻辑保持不变
+                                                     try:
