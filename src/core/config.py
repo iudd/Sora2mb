@@ -89,6 +89,11 @@ class Config:
             },
             "token_refresh": {
                 "at_auto_refresh_enabled": False
+            },
+            "google_drive": {
+                "enabled": False,
+                "space_url": "https://iyougame-url2drive.hf.space",
+                "password": ""
             }
         }
 
@@ -325,6 +330,33 @@ class Config:
         if self._is_hf_spaces:
             return Path(os.environ.get("DATA_DIR", "/data"))
         return Path(__file__).parent.parent.parent
+
+    # Google Drive 配置属性
+    @property
+    def google_drive_enabled(self) -> bool:
+        """Get Google Drive upload enabled status"""
+        return _get_env("GOOGLE_DRIVE_ENABLED", self._config.get("google_drive", {}).get("enabled", False), bool)
+
+    @property
+    def google_drive_space_url(self) -> str:
+        """Get Google Drive Gradio Space URL"""
+        return _get_env("GOOGLE_DRIVE_SPACE_URL") or self._config.get("google_drive", {}).get("space_url", "https://iyougame-url2drive.hf.space")
+
+    @property
+    def google_drive_password(self) -> str:
+        """Get Google Drive password from environment variable or config"""
+        # 优先从环境变量读取
+        env_password = _get_env("GOOGLE_DRIVE_PASSWORD")
+        if env_password:
+            return env_password
+        # 否则从配置文件读取
+        return self._config.get("google_drive", {}).get("password", "")
+
+    def set_google_drive_enabled(self, enabled: bool):
+        """Set Google Drive upload enabled/disabled"""
+        if "google_drive" not in self._config:
+            self._config["google_drive"] = {}
+        self._config["google_drive"]["enabled"] = enabled
 
 
 # Global config instance
