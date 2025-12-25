@@ -418,7 +418,6 @@ const loadAdminConfig = async () => {
 };
 
 // ... (Other config loaders: Proxy, Watermark, Cache, Generation, TokenRefresh) ...
-// Implementing minimal versions for brevity as they follow same pattern
 const loadProxyConfig = async () => {
     try {
         const r = await apiRequest('/api/proxy/config');
