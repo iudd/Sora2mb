@@ -107,14 +107,14 @@ class Database:
         count = await cursor.fetchone()
         if count[0] == 0:
             # Get watermark-free config from config_dict if provided, otherwise use defaults
-            watermark_free_enabled = False
+            watermark_free_enabled = True  # Default: True
             parse_method = "third_party"
             custom_parse_url = None
             custom_parse_token = None
 
             if config_dict:
                 watermark_config = config_dict.get("watermark_free", {})
-                watermark_free_enabled = watermark_config.get("watermark_free_enabled", False)
+                watermark_free_enabled = watermark_config.get("watermark_free_enabled", True)
                 parse_method = watermark_config.get("parse_method", "third_party")
                 custom_parse_url = watermark_config.get("custom_parse_url", "")
                 custom_parse_token = watermark_config.get("custom_parse_token", "")
