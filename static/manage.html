@@ -1,11 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理控制台 - Sora2API</title>
     <script>
-        // 本地优先：移除外链 CDN 依赖，防止被拦截导致样式缺失
         window.tailwind = window.tailwind || { config: () => {} };
     </script>
     <script src="/static/js/tailwind-cdn.js?v=20251211c"></script>
@@ -13,300 +12,91 @@
         @keyframes slide-up{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
         .animate-slide-up{animation:slide-up .3s ease-out}
         .tab-btn{transition:all .2s ease}
-        /* ... (Keep existing CSS) ... */
+        
+        /* 动效样式保持不变 */
         @keyframes quota-glow{
             0%{background:rgba(var(--qa,34,197,94),0.08);box-shadow:inset 0 0 0 1px rgba(var(--qa,34,197,94),0.16),0 0 0 rgba(var(--qa,34,197,94),0)}
             35%{background:rgba(var(--qa,34,197,94),0.16);box-shadow:inset 0 0 0 1px rgba(var(--qa,34,197,94),0.34),0 14px 36px rgba(var(--qa,34,197,94),0.16)}
             100%{background:rgba(var(--qa,34,197,94),0);box-shadow:inset 0 0 0 0 rgba(var(--qa,34,197,94),0),0 0 0 rgba(var(--qa,34,197,94),0)}
         }
-        @keyframes quota-mist{
-            0%{opacity:0;transform:scale(1)}
-            25%{opacity:.9;transform:scale(1.01)}
-            100%{opacity:0;transform:scale(1.04)}
-        }
-        @keyframes quota-sweep{
-            /* 两段扫光：更“电影感”，且持续更久 */
-            0%{transform:translateX(-160%) skewX(-18deg);opacity:0}
-            10%{opacity:1}
-            26%{transform:translateX(240%) skewX(-18deg);opacity:0}
-            54%{transform:translateX(-160%) skewX(-18deg);opacity:0}
-            62%{opacity:1}
-            78%{transform:translateX(240%) skewX(-18deg);opacity:0}
-            100%{transform:translateX(240%) skewX(-18deg);opacity:0}
-        }
+        @keyframes quota-mist{0%{opacity:0;transform:scale(1)}25%{opacity:.9;transform:scale(1.01)}100%{opacity:0;transform:scale(1.04)}}
+        @keyframes quota-sweep{0%{transform:translateX(-160%) skewX(-18deg);opacity:0}10%{opacity:1}26%{transform:translateX(240%) skewX(-18deg);opacity:0}54%{transform:translateX(-160%) skewX(-18deg);opacity:0}62%{opacity:1}78%{transform:translateX(240%) skewX(-18deg);opacity:0}100%{transform:translateX(240%) skewX(-18deg);opacity:0}}
         @keyframes quota-pop{0%{transform:scale(1)}45%{transform:scale(1.08)}100%{transform:scale(1)}}
-        @keyframes quota-text{
-            0%{color:rgba(var(--qaText,22,163,74),0.98);text-shadow:0 0 14px rgba(var(--qa,34,197,94),0.28)}
-            55%{color:rgba(var(--qaText,22,163,74),0.92);text-shadow:0 0 18px rgba(var(--qa,34,197,94),0.22)}
-            100%{color:inherit;text-shadow:none}
-        }
-
-        /* 小徽标：Δ 提示（+n / -n） */
-        @keyframes quota-delta-rise{
-            0%{opacity:0;transform:translateY(8px) scale(0.92);filter:blur(1px)}
-            16%{opacity:1;transform:translateY(0) scale(1.0);filter:blur(0)}
-            70%{opacity:1;transform:translateY(-6px) scale(1.02)}
-            100%{opacity:0;transform:translateY(-12px) scale(1.05);filter:blur(0)}
-        }
+        @keyframes quota-text{0%{color:rgba(var(--qaText,22,163,74),0.98);text-shadow:0 0 14px rgba(var(--qa,34,197,94),0.28)}55%{color:rgba(var(--qaText,22,163,74),0.92);text-shadow:0 0 18px rgba(var(--qa,34,197,94),0.22)}100%{color:inherit;text-shadow:none}}
+        @keyframes quota-delta-rise{0%{opacity:0;transform:translateY(8px) scale(0.92);filter:blur(1px)}16%{opacity:1;transform:translateY(0) scale(1.0);filter:blur(0)}70%{opacity:1;transform:translateY(-6px) scale(1.02)}100%{opacity:0;transform:translateY(-12px) scale(1.05);filter:blur(0)}}
         .quota-cell{position:relative}
-        .quota-delta{
-            position:absolute;
-            right:10px;
-            top:50%;
-            transform:translateY(-50%);
-            padding:3px 8px;
-            border-radius:999px;
-            font-size:12px;
-            line-height:1;
-            font-weight:900;
-            letter-spacing:.2px;
-            pointer-events:none;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            animation: quota-delta-rise 5.2s ease-out both;
-            box-shadow:0 10px 28px rgba(15,23,42,0.10);
-        }
-        .quota-delta.up{
-            color:#16a34a;
-            border:1px solid rgba(34,197,94,0.28);
-            background:linear-gradient(135deg, rgba(34,197,94,0.14), rgba(255,255,255,0.06));
-        }
-        .quota-delta.down{
-            color:#ef4444;
-            border:1px solid rgba(239,68,68,0.26);
-            background:linear-gradient(135deg, rgba(239,68,68,0.12), rgba(255,255,255,0.05));
-        }
-        .quota-flash{
-            --qa:34,197,94;
-            --qaText:22,163,74;
-            position:relative;
-            overflow:hidden;
-            border-radius:10px;
-            animation:quota-glow 5.2s ease-out;
-        }
-        .quota-flash.quota-down{
-            --qa:239,68,68;
-            --qaText:239,68,68;
-        }
-        .quota-flash.quota-neutral{
-            --qa:59,130,246;
-            --qaText:37,99,235;
-        }
-        .quota-flash::before{
-            content:"";
-            position:absolute;
-            inset:0;
-            pointer-events:none;
-            background:
-                radial-gradient(circle at 22% 22%, rgba(255,255,255,0.28), transparent 55%),
-                radial-gradient(circle at 70% 85%, rgba(var(--qa,34,197,94),0.20), transparent 60%);
-            opacity:0;
-            animation:quota-mist 5.2s ease-out;
-        }
-        .quota-flash::after{
-            content:"";
-            position:absolute;
-            top:-30%;
-            bottom:-30%;
-            left:-75%;
-            width:58%;
-            pointer-events:none;
-            background:linear-gradient(90deg, transparent, rgba(255,255,255,0.42), transparent);
-            transform:translateX(-160%) skewX(-18deg);
-            opacity:0;
-            animation:quota-sweep 5.2s ease-out;
-        }
-        .quota-flash span{
-            position:relative;
-            z-index:1;
-            animation:quota-pop .75s ease-out, quota-text 5.2s ease-out;
-            transform-origin:left center;
-        }
-
-        /* 小烟花：可用次数更新时的微粒闪烁（纯 CSS，无外链） */
-        @keyframes quota-spark{
-            0%{opacity:0;transform:translate(-50%,-50%) translate(var(--x0,0px),var(--y0,0px)) scale(0.66);filter:blur(0.45px)}
-            16%{opacity:1;transform:translate(-50%,-50%) translate(var(--x0,0px),var(--y0,0px)) scale(0.86);filter:blur(0.10px)}
-            70%{opacity:.92}
-            100%{opacity:0;transform:translate(-50%,-50%) translate(var(--x1,0px),var(--y1,0px)) scale(1.18);filter:blur(0)}
-        }
-        .quota-spark{
-            position:absolute;
-            left:50%;
-            top:50%;
-            width:var(--s,8px);
-            height:var(--s,8px);
-            border-radius:999px;
-            pointer-events:none;
-            opacity:0;
-            background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.96), rgba(34,197,94,0.46), transparent 72%);
-            box-shadow:0 0 0 1px rgba(255,255,255,0.10),0 14px 36px rgba(34,197,94,0.14);
-            mix-blend-mode:screen;
-            animation:quota-spark 5.2s ease-out both;
-            animation-delay:var(--d,0s);
-        }
-        .quota-spark.down{
-            background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.94), rgba(239,68,68,0.44), transparent 72%);
-            box-shadow:0 0 0 1px rgba(255,255,255,0.10),0 14px 36px rgba(239,68,68,0.14);
-        }
-
-        /* 汇总（顶部可用次数）也给一点“更新感”，但节制：只在数值变化时短暂跳一下 */
-        @keyframes quota-total-flash{
-            0%{transform:translateY(0) scale(1);filter:saturate(1);text-shadow:0 0 0 rgba(245,158,11,0)}
-            22%{transform:translateY(-1px) scale(1.06);filter:saturate(1.10);text-shadow:0 0 18px rgba(245,158,11,0.22)}
-            58%{transform:translateY(0) scale(1.02);filter:saturate(1.06);text-shadow:0 0 14px rgba(245,158,11,0.16)}
-            100%{transform:translateY(0) scale(1);filter:saturate(1);text-shadow:0 0 0 rgba(245,158,11,0)}
-        }
+        .quota-delta{position:absolute;right:10px;top:50%;transform:translateY(-50%);padding:3px 8px;border-radius:999px;font-size:12px;line-height:1;font-weight:900;letter-spacing:.2px;pointer-events:none;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:quota-delta-rise 5.2s ease-out both;box-shadow:0 10px 28px rgba(15,23,42,0.10)}
+        .quota-delta.up{color:#16a34a;border:1px solid rgba(34,197,94,0.28);background:linear-gradient(135deg,rgba(34,197,94,0.14),rgba(255,255,255,0.06))}
+        .quota-delta.down{color:#ef4444;border:1px solid rgba(239,68,68,0.26);background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(255,255,255,0.05))}
+        .quota-flash{--qa:34,197,94;--qaText:22,163,74;position:relative;overflow:hidden;border-radius:10px;animation:quota-glow 5.2s ease-out}
+        .quota-flash.quota-down{--qa:239,68,68;--qaText:239,68,68}
+        .quota-flash.quota-neutral{--qa:59,130,246;--qaText:37,99,235}
+        .quota-flash::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 22% 22%,rgba(255,255,255,0.28),transparent 55%),radial-gradient(circle at 70% 85%,rgba(var(--qa,34,197,94),0.20),transparent 60%);opacity:0;animation:quota-mist 5.2s ease-out}
+        .quota-flash::after{content:"";position:absolute;top:-30%;bottom:-30%;left:-75%;width:58%;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.42),transparent);transform:translateX(-160%) skewX(-18deg);opacity:0;animation:quota-sweep 5.2s ease-out}
+        .quota-flash span{position:relative;z-index:1;animation:quota-pop .75s ease-out,quota-text 5.2s ease-out;transform-origin:left center}
+        @keyframes quota-spark{0%{opacity:0;transform:translate(-50%,-50%) translate(var(--x0,0px),var(--y0,0px)) scale(0.66);filter:blur(0.45px)}16%{opacity:1;transform:translate(-50%,-50%) translate(var(--x0,0px),var(--y0,0px)) scale(0.86);filter:blur(0.10px)}70%{opacity:.92}100%{opacity:0;transform:translate(-50%,-50%) translate(var(--x1,0px),var(--y1,0px)) scale(1.18);filter:blur(0)}}
+        .quota-spark{position:absolute;left:50%;top:50%;width:var(--s,8px);height:var(--s,8px);border-radius:999px;pointer-events:none;opacity:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.96),rgba(34,197,94,0.46),transparent 72%);box-shadow:0 0 0 1px rgba(255,255,255,0.10),0 14px 36px rgba(34,197,94,0.14);mix-blend-mode:screen;animation:quota-spark 5.2s ease-out both;animation-delay:var(--d,0s)}
+        .quota-spark.down{background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.94),rgba(239,68,68,0.44),transparent 72%);box-shadow:0 0 0 1px rgba(255,255,255,0.10),0 14px 36px rgba(239,68,68,0.14)}
+        @keyframes quota-total-flash{0%{transform:translateY(0) scale(1);filter:saturate(1);text-shadow:0 0 0 rgba(245,158,11,0)}22%{transform:translateY(-1px) scale(1.06);filter:saturate(1.10);text-shadow:0 0 18px rgba(245,158,11,0.22)}58%{transform:translateY(0) scale(1.02);filter:saturate(1.06);text-shadow:0 0 14px rgba(245,158,11,0.16)}100%{transform:translateY(0) scale(1);filter:saturate(1);text-shadow:0 0 0 rgba(245,158,11,0)}}
         #statQuota.quota-total-flash{animation:quota-total-flash 2.4s ease-out}
-        @media (prefers-reduced-motion: reduce){
-            .quota-flash{animation:none}
-            .quota-flash::before{animation:none}
-            .quota-flash::after{animation:none}
-            .quota-flash span{animation:none}
-            .quota-spark{display:none}
-            #statQuota.quota-total-flash{animation:none}
-        }
-
-        /* 行级测试中反馈：更直观的“正在跑”状态（批量并发时尤其重要） */
-        @keyframes quota-loading-shimmer{
-            0%{transform:translateX(-140%) skewX(-16deg);opacity:0}
-            20%{opacity:.95}
-            100%{transform:translateX(240%) skewX(-16deg);opacity:0}
-        }
-        @keyframes quota-loading-breath{
-            0%{transform:translateY(-50%) scale(1);filter:saturate(1)}
-            50%{transform:translateY(-50%) scale(1.02);filter:saturate(1.06)}
-            100%{transform:translateY(-50%) scale(1);filter:saturate(1)}
-        }
-        @keyframes quota-loading-dots{
-            0%,100%{background:rgba(15,23,42,0.22);box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.22)}
-            25%{background:rgba(15,23,42,0.60);box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.22)}
-            50%{background:rgba(15,23,42,0.22);box-shadow:10px 0 0 rgba(15,23,42,0.60),20px 0 0 rgba(15,23,42,0.22)}
-            75%{background:rgba(15,23,42,0.22);box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.60)}
-        }
-        .quota-cell[data-testing="1"]{
-            background:linear-gradient(90deg, rgba(59,130,246,0.08), rgba(255,255,255,0));
-            box-shadow:inset 0 0 0 1px rgba(59,130,246,0.14);
-            border-radius:10px;
-        }
-        .quota-cell[data-testing="1"] > span{
-            opacity:0.62;
-        }
-        .quota-loading{
-            position:absolute;
-            right:10px;
-            top:50%;
-            transform:translateY(-50%);
-            display:inline-flex;
-            align-items:center;
-            gap:8px;
-            padding:3px 10px;
-            border-radius:999px;
-            font-size:12px;
-            line-height:1;
-            font-weight:900;
-            letter-spacing:.2px;
-            color:rgba(15,23,42,0.82);
-            border:1px solid rgba(148,163,184,0.36);
-            background:
-                radial-gradient(circle at 30% 20%, rgba(255,255,255,0.62), rgba(255,255,255,0.10)),
-                linear-gradient(135deg, rgba(255,255,255,0.52), rgba(255,255,255,0.18));
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow:0 14px 34px rgba(15,23,42,0.10);
-            overflow:hidden;
-            pointer-events:none;
-            animation:quota-loading-breath 1.65s ease-in-out infinite;
-        }
-        .quota-loading::after{
-            content:"";
-            position:absolute;
-            inset:-1px;
-            pointer-events:none;
-            background:linear-gradient(90deg, transparent, rgba(255,255,255,0.58), transparent);
-            transform:translateX(-140%) skewX(-16deg);
-            animation:quota-loading-shimmer 1.25s linear infinite;
-        }
+        @media (prefers-reduced-motion:reduce){.quota-flash{animation:none}.quota-flash::before{animation:none}.quota-flash::after{animation:none}.quota-flash span{animation:none}.quota-spark{display:none}#statQuota.quota-total-flash{animation:none}.quota-loading{animation:none}.quota-loading::after{animation:none}.quota-loading-dots{animation:none}tr[data-pulse="ok"] td{animation:none}tr[data-pulse="fail"] td{animation:none}}
+        @keyframes quota-loading-shimmer{0%{transform:translateX(-140%) skewX(-16deg);opacity:0}20%{opacity:.95}100%{transform:translateX(240%) skewX(-16deg);opacity:0}}
+        @keyframes quota-loading-breath{0%{transform:translateY(-50%) scale(1);filter:saturate(1)}50%{transform:translateY(-50%) scale(1.02);filter:saturate(1.06)}100%{transform:translateY(-50%) scale(1);filter:saturate(1)}}
+        @keyframes quota-loading-dots{0%,100%{background:rgba(15,23,42,0.22);box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.22)}25%{background:rgba(15,23,42,0.60);box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.22)}50%{background:rgba(15,23,42,0.22);box-shadow:10px 0 0 rgba(15,23,42,0.60),20px 0 0 rgba(15,23,42,0.22)}75%{background:rgba(15,23,42,0.22);box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.60)}}
+        .quota-cell[data-testing="1"]{background:linear-gradient(90deg,rgba(59,130,246,0.08),rgba(255,255,255,0));box-shadow:inset 0 0 0 1px rgba(59,130,246,0.14);border-radius:10px}
+        .quota-cell[data-testing="1"]>span{opacity:0.62}
+        .quota-loading{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:8px;padding:3px 10px;border-radius:999px;font-size:12px;line-height:1;font-weight:900;letter-spacing:.2px;color:rgba(15,23,42,0.82);border:1px solid rgba(148,163,184,0.36);background:radial-gradient(circle at 30% 20%,rgba(255,255,255,0.62),rgba(255,255,255,0.10)),linear-gradient(135deg,rgba(255,255,255,0.52),rgba(255,255,255,0.18));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 14px 34px rgba(15,23,42,0.10);overflow:hidden;pointer-events:none;animation:quota-loading-breath 1.65s ease-in-out infinite}
+        .quota-loading::after{content:"";position:absolute;inset:-1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.58),transparent);transform:translateX(-140%) skewX(-16deg);animation:quota-loading-shimmer 1.25s linear infinite}
         .quota-loading-pill{position:relative;z-index:1}
-        .quota-loading-dots{
-            position:relative;
-            z-index:1;
-            width:6px;
-            height:6px;
-            border-radius:999px;
-            background:rgba(15,23,42,0.22);
-            box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.22);
-            animation:quota-loading-dots 1.05s ease-in-out infinite;
-        }
-
-        /* 行级结果脉冲：成功/失败一眼可见（不裸露 JSON） */
-        @keyframes row-pulse-ok{
-            0%{background:rgba(34,197,94,0.10)}
-            45%{background:rgba(34,197,94,0.14)}
-            100%{background:rgba(34,197,94,0)}
-        }
-        @keyframes row-pulse-fail{
-            0%{background:rgba(239,68,68,0.10)}
-            45%{background:rgba(239,68,68,0.14)}
-            100%{background:rgba(239,68,68,0)}
-        }
+        .quota-loading-dots{position:relative;z-index:1;width:6px;height:6px;border-radius:999px;background:rgba(15,23,42,0.22);box-shadow:10px 0 0 rgba(15,23,42,0.22),20px 0 0 rgba(15,23,42,0.22);animation:quota-loading-dots 1.05s ease-in-out infinite}
+        @keyframes row-pulse-ok{0%{background:rgba(34,197,94,0.10)}45%{background:rgba(34,197,94,0.14)}100%{background:rgba(34,197,94,0)}}
+        @keyframes row-pulse-fail{0%{background:rgba(239,68,68,0.10)}45%{background:rgba(239,68,68,0.14)}100%{background:rgba(239,68,68,0)}}
         tr[data-pulse="ok"] td{animation:row-pulse-ok 1.25s ease-out}
         tr[data-pulse="fail"] td{animation:row-pulse-fail 1.25s ease-out}
-        @media (prefers-reduced-motion: reduce){
-            .quota-loading{animation:none}
-            .quota-loading::after{animation:none}
-            .quota-loading-dots{animation:none}
-            tr[data-pulse="ok"] td{animation:none}
-            tr[data-pulse="fail"] td{animation:none}
-        }
-
-        /* 一键测试按钮：加载态光带（避免“无事发生”） */
-        @keyframes btn-shimmer{
-            0%{transform:translateX(-140%) skewX(-18deg);opacity:0}
-            20%{opacity:.9}
-            100%{transform:translateX(240%) skewX(-18deg);opacity:0}
-        }
+        @keyframes btn-shimmer{0%{transform:translateX(-140%) skewX(-18deg);opacity:0}20%{opacity:.9}100%{transform:translateX(240%) skewX(-18deg);opacity:0}}
         @keyframes btn-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         #btnTestAll{position:relative;overflow:hidden}
-        #btnTestAll[data-loading="1"]{
-            filter:saturate(1.06);
-            box-shadow:0 16px 38px rgba(245,158,11,0.28);
-        }
-        #btnTestAll[data-loading="1"]::after{
-            content:"";
-            position:absolute;
-            inset:-1px;
-            pointer-events:none;
-            background:linear-gradient(90deg, transparent, rgba(255,255,255,0.40), transparent);
-            transform:translateX(-140%) skewX(-18deg);
-            animation:btn-shimmer 1.25s linear infinite;
-        }
-        #btnTestAll[data-loading="1"] svg{
-            transform-origin:center;
-            animation:btn-spin 1.15s linear infinite;
-        }
+        #btnTestAll[data-loading="1"]{filter:saturate(1.06);box-shadow:0 16px 38px rgba(245,158,11,0.28)}
+        #btnTestAll[data-loading="1"]::after{content:"";position:absolute;inset:-1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.40),transparent);transform:translateX(-140%) skewX(-18deg);animation:btn-shimmer 1.25s linear infinite}
+        #btnTestAll[data-loading="1"] svg{transform-origin:center;animation:btn-spin 1.15s linear infinite}
         @keyframes btn-done{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
         #btnTestAll[data-done]{animation:btn-done .85s ease-out}
         #btnTestAll[data-done="ok"]{box-shadow:0 0 0 2px rgba(34,197,94,0.40),0 18px 42px rgba(34,197,94,0.18)}
         #btnTestAll[data-done="warn"]{box-shadow:0 0 0 2px rgba(239,68,68,0.34),0 18px 42px rgba(239,68,68,0.16)}
-        /* 生成面板铺满（仅面向 panelGenerate，其他面板不受影响） */
-        .full-bleed-panel{
-            width:100vw;
-            margin-left:calc(50% - 50vw);
-            margin-right:calc(50% - 50vw);
-            padding-left:0;
-            padding-right:0;
-        }
-        /* 全局任务浮动球 */
-        /* ... (Keep existing task-bubble styles) ... */
+        .full-bleed-panel{width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);padding-left:0;padding-right:0}
+        .task-bubble{position:fixed;bottom:18px;right:18px;width:64px;height:64px;border-radius:999px;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.42),rgba(255,255,255,0.10)),linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-weight:800;letter-spacing:.2px;cursor:pointer;z-index:1000;transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;box-shadow:0 14px 34px rgba(37,99,235,0.35),inset 0 0 0 1px rgba(255,255,255,0.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);user-select:none;-webkit-tap-highlight-color:transparent}
+        .task-bubble::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:radial-gradient(rgba(15,23,42,0.22) 1px,transparent 1px);background-size:7px 7px;opacity:.10;mix-blend-mode:overlay}
+        .task-bubble::after{content:"";position:absolute;inset:2px;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,0.35),transparent 45%);opacity:.85}
+        .task-bubble:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 18px 40px rgba(37,99,235,0.45);filter:saturate(1.05)}
+        .task-bubble:active{transform:translateY(0) scale(.97)}
+        .task-bubble.hidden{display:none}
+        @keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(79,70,229,0.32)}70%{box-shadow:0 0 0 14px rgba(79,70,229,0)}100%{box-shadow:0 0 0 0 rgba(79,70,229,0)}}
+        .task-bubble[data-running="1"]{animation:pulse-ring 1.8s ease-out infinite}
+        @keyframes bubble-pop{0%{transform:scale(1)}35%{transform:scale(1.07)}100%{transform:scale(1)}}
+        .task-bubble.flash{animation:bubble-pop .55s ease}
+        .task-bubble-count{font-size:18px;line-height:1;position:relative;z-index:1}
+        .task-bubble-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.16);border-radius:6px;font-size:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.18);position:relative;z-index:1}
+        .task-bubble-badge{position:absolute;top:-6px;left:-6px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:900;font-size:12px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 22px rgba(239,68,68,0.25),inset 0 0 0 1px rgba(255,255,255,0.25);z-index:2}
+        .task-drawer{transition:opacity .18s ease}
+        .task-drawer .task-drawer-backdrop{opacity:0;transition:opacity .18s ease}
+        .task-drawer .task-drawer-panel{transform:translateX(14px);opacity:0;transition:transform .22s ease,opacity .22s ease}
+        .task-drawer.open .task-drawer-backdrop{opacity:1}
+        .task-drawer.open .task-drawer-panel{transform:translateX(0);opacity:1}
+        .cc-surface{position:relative;overflow:hidden;border-radius:18px;background:radial-gradient(900px 520px at 8% 10%,rgba(37,99,235,0.18),transparent 58%),radial-gradient(760px 460px at 92% 18%,rgba(79,70,229,0.16),transparent 56%),radial-gradient(760px 520px at 42% 92%,rgba(16,185,129,0.12),transparent 58%),linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,250,252,0.88));box-shadow:0 20px 52px rgba(15,23,42,0.08)}
+        .cc-surface::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(15,23,42,0.14) 1px,transparent 1px);background-size:6px 6px;opacity:.08;mix-blend-mode:overlay}
+        .cc-surface::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.55),transparent 55%)}
+        @keyframes cc-enter{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .cc-enter{animation:cc-enter 420ms cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 28ms)}
+        .cc-btn{transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
+        .cc-btn:active{transform:scale(.97)}
+        .cc-focus:focus-visible{outline:3px solid rgba(37,99,235,0.45);outline-offset:2px}
+        @media (prefers-reduced-motion:reduce){.cc-enter{animation:none!important}.cc-btn{transition:none!important}}
     </style>
     <script>
-        // tailwind 配置：本地脚本已就绪后立即注入主题
         tailwind.config={theme:{extend:{colors:{border:"hsl(0 0% 89%)",input:"hsl(0 0% 89%)",ring:"hsl(0 0% 3.9%)",background:"hsl(0 0% 100%)",foreground:"hsl(0 0% 3.9%)",primary:{DEFAULT:"hsl(0 0% 9%)",foreground:"hsl(0 0% 98%)"},secondary:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 9%)"},muted:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 45.1%)"},destructive:{DEFAULT:"hsl(0 84.2% 60.2%)",foreground:"hsl(0 0% 98%)"}}}}}
     </script>
 </head>
 <body class="h-full bg-background text-foreground antialiased">
-    <!-- ... (Keep existing task bubble & drawer HTML) ... -->
     <div id="globalTaskBubble" class="task-bubble hidden" title="生成任务进行中" aria-live="polite" aria-label="生成任务气泡" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false">
         <span class="task-bubble-icon" aria-hidden="true">▶</span>
         <span id="globalTaskBubbleCount" class="task-bubble-count">0</span>
@@ -341,7 +131,6 @@
             </div>
         </div>
     </div>
-    <!-- 导航栏 -->
     <header class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur">
         <div class="mx-auto flex h-14 max-w-7xl items-center px-6">
             <div class="mr-4 flex items-baseline gap-3">
@@ -366,7 +155,6 @@
     </header>
 
     <main id="mainContainer" class="mx-auto max-w-7xl px-6 py-6" style="max-width: 1440px;">
-        <!-- Tab 导航 -->
         <div class="border-b border-border mb-6">
             <nav class="flex space-x-8">
                 <button onclick="switchTab('tokens')" id="tabTokens" class="tab-btn border-b-2 border-primary text-sm font-medium py-3 px-1">Token 管理</button>
@@ -380,31 +168,152 @@
 
         <!-- Token 管理面板 -->
         <div id="panelTokens">
-            <!-- (Keep existing Token Panel content) -->
-            <!-- ... -->
+            <div class="grid gap-4 grid-cols-2 md:grid-cols-5 lg:grid-cols-6 mb-6">
+                <div class="rounded-lg border border-border bg-background p-4"><p class="text-sm font-medium text-muted-foreground mb-2">Token 总数</p><h3 class="text-xl font-bold" id="statTotal">-</h3></div>
+                <div class="rounded-lg border border-border bg-background p-4"><p class="text-sm font-medium text-muted-foreground mb-2">活跃 Token</p><h3 class="text-xl font-bold text-green-600" id="statActive">-</h3></div>
+                <div class="rounded-lg border border-border bg-background p-4"><p class="text-sm font-medium text-muted-foreground mb-2">今日图片/总图片</p><h3 class="text-xl font-bold text-blue-600" id="statImages">-</h3></div>
+                <div class="rounded-lg border border-border bg-background p-4"><p class="text-sm font-medium text-muted-foreground mb-2">今日视频/总视频</p><h3 class="text-xl font-bold text-purple-600" id="statVideos">-</h3></div>
+                <div class="rounded-lg border border-border bg-background p-4"><p class="text-sm font-medium text-muted-foreground mb-2">今日错误/总错误</p><h3 class="text-xl font-bold text-destructive" id="statErrors">-</h3></div>
+                <div class="rounded-lg border border-border bg-background p-4"><p class="text-sm font-medium text-muted-foreground mb-2">今日剩余/总次数</p><h3 class="text-xl font-bold text-amber-600" id="statQuota">-</h3></div>
+            </div>
+            <div class="rounded-lg border border-border bg-background">
+                <div class="flex items-center justify-between gap-4 p-4 border-b border-border">
+                    <h3 class="text-lg font-semibold">Token 列表</h3>
+                    <div class="flex items-center gap-3">
+                         <div class="flex items-center gap-2">
+                            <span class="text-xs text-muted-foreground">自动刷新AT</span>
+                            <div class="relative inline-flex items-center group">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="atAutoRefreshToggle" onchange="toggleATAutoRefresh()" class="sr-only peer">
+                                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                 </label>
+                              </div>
+                          </div>
+                        <button id="btnManualATRefresh" onclick="manualATAutoRefresh()" class="inline-flex items-center justify-center rounded-md bg-amber-500 text-white hover:bg-amber-600 h-8 px-3 text-xs font-semibold shadow-sm">手动刷新</button>
+                        <button onclick="refreshTokens()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+                        <button onclick="exportTokens()" class="inline-flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 h-8 px-3"><span class="text-sm font-medium">导出</span></button>
+                        <button onclick="openImportModal()" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 h-8 px-3"><span class="text-sm font-medium">导入</span></button>
+                        <button id="btnTestAll" onclick="testAllTokens()" class="inline-flex items-center justify-center rounded-md bg-amber-500 text-white hover:bg-amber-600 h-8 px-3"><span class="text-sm font-medium">一键测试</span></button>
+                        <button onclick="openAddModal()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3"><span class="text-sm font-medium">新增</span></button>
+                    </div>
+                </div>
+                <div class="relative w-full overflow-auto">
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b border-border"><th class="h-10 px-3 text-left">邮箱</th><th class="h-10 px-3 text-left">状态</th><th class="h-10 px-3 text-left">Client ID</th><th class="h-10 px-3 text-left">过期时间(AT)</th><th class="h-10 px-3 text-left">账户类型</th><th class="h-10 px-3 text-left">Sora2</th><th class="h-10 px-3 text-left">可用次数</th><th class="h-10 px-3 text-left">图片</th><th class="h-10 px-3 text-left">视频</th><th class="h-10 px-3 text-left">错误</th><th class="h-10 px-3 text-left">备注</th><th class="h-10 px-3 text-right">操作</th></tr></thead>
+                        <tbody id="tokenTableBody" class="divide-y divide-border"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- 系统配置面板 -->
         <div id="panelSettings" class="hidden">
-            <!-- (Keep existing Settings Panel content) -->
-            <!-- ... -->
+            <div class="grid gap-6 lg:grid-cols-2">
+                <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">安全配置</h3>
+                    <div class="space-y-4">
+                        <div><label class="text-sm font-medium mb-2 block">管理员用户名</label><input id="cfgAdminUsername" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <div><label class="text-sm font-medium mb-2 block">旧密码</label><input id="cfgOldPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <div><label class="text-sm font-medium mb-2 block">新密码</label><input id="cfgNewPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <button onclick="updateAdminPassword()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">修改密码</button>
+                    </div>
+                </div>
+                <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">API 密钥配置</h3>
+                    <div class="space-y-4">
+                        <div><label class="text-sm font-medium mb-2 block">当前 API Key</label><input id="cfgCurrentAPIKey" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" readonly disabled></div>
+                        <div><label class="text-sm font-medium mb-2 block">新 API Key</label><input id="cfgNewAPIKey" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <button onclick="updateAPIKey()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">更新 API Key</button>
+                    </div>
+                </div>
+                <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">代理配置</h3>
+                    <div class=\"space-y-4\">
+                        <div><label class="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" id="cfgProxyEnabled" class="h-4 w-4 rounded border-input"><span class="text-sm font-medium">启用代理</span></label></div>
+                        <div><label class="text-sm font-medium mb-2 block">代理地址</label><input id="cfgProxyUrl" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <button onclick="saveProxyConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                    </div>
+                </div>
+                <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">错误处理配置</h3>
+                    <div class="space-y-4">
+                        <div><label class="text-sm font-medium mb-2 block">错误封禁阈值</label><input id="cfgErrorBan" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <button onclick="saveAdminConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                    </div>
+                </div>
+                 <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">缓存配置</h3>
+                    <div class="space-y-4">
+                        <div><label class="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" id="cfgCacheEnabled" class="h-4 w-4 rounded border-input" onchange="toggleCacheOptions()"><span class="text-sm font-medium">启用缓存</span></label></div>
+                        <div id="cacheOptions" style="display: none;" class="space-y-4 pt-4 border-t border-border">
+                            <div><label class="text-sm font-medium mb-2 block">缓存超时时间（秒）</label><input id="cfgCacheTimeout" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                            <div><label class="text-sm font-medium mb-2 block">缓存文件访问域名</label><input id="cfgCacheBaseUrl" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                             <div id="cacheEffectiveUrl" class="rounded-md bg-muted p-3 hidden"><p class="text-xs text-muted-foreground"><strong>🌐 当前生效的访问地址：</strong><code id="cacheEffectiveUrlValue" class="bg-background px-1 py-0.5 rounded"></code></p></div>
+                        </div>
+                        <button onclick="saveCacheConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                    </div>
+                </div>
+                <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">生成超时配置</h3>
+                    <div class="space-y-4">
+                        <div><label class="text-sm font-medium mb-2 block">图片生成超时时间</label><input id="cfgImageTimeout" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <div><label class="text-sm font-medium mb-2 block">视频生成超时时间</label><input id="cfgVideoTimeout" type="number" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></div>
+                        <button onclick="saveGenerationTimeout()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                    </div>
+                </div>
+                <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">无水印模式配置</h3>
+                    <div class="space-y-4">
+                        <div><label class="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" id="cfgWatermarkFreeEnabled" class="h-4 w-4 rounded border-input" onchange="toggleWatermarkFreeOptions()"><span class="text-sm font-medium">开启无水印模式</span></label></div>
+                        <div id="watermarkFreeOptions" style="display: none;" class="space-y-4 pt-4 border-t border-border">
+                            <div>
+                                <label class="text-sm font-medium">解析方式</label>
+                                <select id="cfgParseMethod" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground" onchange="toggleCustomParseOptions()">
+                                    <option value="third_party">第三方解析</option>
+                                    <option value="custom">自定义解析接口</option>
+                                </select>
+                            </div>
+                            <div id="customParseOptions" style="display: none;" class="space-y-4">
+                                <div><label class="text-sm font-medium">服务器地址</label><input type="text" id="cfgCustomParseUrl" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground"></div>
+                                <div><label class="text-sm font-medium">访问密钥</label><input type="password" id="cfgCustomParseToken" class="w-full mt-2 px-3 py-2 border border-input rounded-md bg-background text-foreground"></div>
+                            </div>
+                        </div>
+                        <button onclick="saveWatermarkFreeConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full">保存配置</button>
+                    </div>
+                </div>
+                 <div class="rounded-lg border border-border bg-background p-6">
+                    <h3 class="text-lg font-semibold mb-4">调试配置</h3>
+                    <div class="space-y-4">
+                        <div><label class="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" id="cfgDebugEnabled" class="h-4 w-4 rounded border-input" onchange="toggleDebugMode()"><span class="text-sm font-medium">启用调试模式</span></label></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 请求日志面板 -->
         <div id="panelLogs" class="hidden">
-            <!-- (Keep existing Logs Panel content) -->
-            <!-- ... -->
+            <div class="rounded-lg border border-border bg-background">
+                <div class="flex items-center justify-between gap-4 p-4 border-b border-border">
+                    <h3 class="text-lg font-semibold">请求日志</h3>
+                    <button onclick="refreshLogs()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8"><svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+                </div>
+                <div class="relative w-full overflow-auto max-h-[600px]">
+                    <table class="w-full text-sm">
+                        <thead class="sticky top-0 bg-background"><tr class="border-b border-border"><th class="h-10 px-3 text-left">操作</th><th class="h-10 px-3 text-left">Token邮箱</th><th class="h-10 px-3 text-left">状态码</th><th class="h-10 px-3 text-left">耗时(秒)</th><th class="h-10 px-3 text-left">时间</th></tr></thead>
+                        <tbody id="logsTableBody" class="divide-y divide-border"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        
+
         <!-- 视频同步面板 -->
         <div id="panelVideos" class="hidden">
              <div class="rounded-lg border border-border bg-background p-6">
-                <h3 class="text-lg font-semibold mb-4">视频同步与处理</h3>
+                <h3 class="text-lg font-semibold mb-4">视频同步 & 转存</h3>
                 <p class="text-sm text-muted-foreground mb-6">
                     从 Sora 账号同步最新生成的视频，自动执行无水印处理并上传到 Google Drive。
                     <br>默认使用“无水印模式”配置进行处理。
                 </p>
-                
                 <div class="flex items-end gap-4 mb-6">
                     <div>
                         <label class="text-sm font-medium mb-2 block">同步数量</label>
@@ -414,14 +323,10 @@
                     <div>
                          <button id="btnSyncVideo" onclick="syncLatestVideo()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-5 text-sm font-medium">
                             <span id="btnSyncText">开始同步</span>
-                            <svg id="btnSyncSpinner" class="hidden animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <svg id="btnSyncSpinner" class="hidden animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         </button>
                     </div>
                 </div>
-
                 <div class="rounded-lg border border-border bg-muted/30 p-4">
                     <h4 class="text-sm font-semibold mb-2">处理日志</h4>
                     <pre id="syncLog" class="text-xs font-mono whitespace-pre-wrap text-muted-foreground bg-background p-3 rounded border border-border h-64 overflow-y-auto">等待操作...</pre>
@@ -436,19 +341,62 @@
 
         <!-- 角色卡面板 -->
         <div id="panelCharacters" class="hidden">
-            <!-- (Keep existing Character Panel content) -->
-             <!-- ... -->
+            <section class="cc-surface border border-border p-4 sm:p-5">
+                <div class="relative flex flex-col gap-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div><h3 class="text-lg font-semibold">角色卡</h3><p class="text-xs text-muted-foreground">支持搜索/排序/视图切换；点卡片可查看详情并重命名。</p></div>
+                        <div class="flex items-center gap-2"><div id="characterCount" class="text-xs text-muted-foreground"></div><button id="characterRefreshBtn" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 px-3 text-sm" type="button">刷新</button><button id="characterSyncBtn" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm" type=\"button\" title="从所有活跃Token同步角色数据">同步</button></div>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex flex-1 items-center gap-2">
+                            <div class="relative flex-1"><input id="characterSearch" class="cc-focus flex h-9 w-full rounded-md border border-input bg-background/70 backdrop-blur px-9 py-2 text-sm" placeholder="搜索..."><button id="characterSearchClear" class="cc-btn cc-focus hidden absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-md hover:bg-accent text-slate-500" type="button">×</button></div>
+                            <select id="characterSort" class="cc-focus flex h-9 rounded-md border border-input bg-background/70 backdrop-blur px-3 text-sm"><option value="newest">最新创建</option><option value="oldest">最早创建</option><option value="name_asc">名称 A→Z</option><option value="name_desc">名称 Z→A</option></select>
+                        </div>
+                        <div class="flex items-center gap-2"><button id="characterViewGrid" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md border border-input bg-background/70 backdrop-blur h-9 px-3 text-sm">网格</button><button id="characterViewList" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md border border-input bg-background/70 backdrop-blur h-9 px-3 text-sm">列表</button></div>
+                    </div>
+                    <div id="characterBulkBar" class="hidden rounded-xl border border-border bg-background/70 backdrop-blur px-3 py-2 flex items-center justify-between gap-3"><div class="text-sm text-foreground">已选择 <span id="characterSelectedCount" class="font-semibold">0</span> 个</div><div class="flex items-center gap-2"><button id="characterBulkCopy" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm">复制 @username</button><button id="characterBulkClear" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-8 px-3 text-sm">取消选择</button></div></div>
+                    <div id="characterEmpty"><div class="rounded-2xl border border-border bg-background/70 backdrop-blur p-6 text-center"><div class="text-sm font-semibold">暂无角色卡</div><div id="characterEmptySubtitle" class="mt-1 text-xs text-muted-foreground"></div><div class="mt-4 flex items-center justify-center gap-2"><button id="characterGoGenerateBtn" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm">去生成面板</button><button id="characterEmptyRefreshBtn" class="cc-btn cc-focus inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-4 text-sm">刷新</button></div></div></div>
+                    <div id="characterGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+                </div>
+            </section>
+        </div>
+        
+        <!-- 角色卡模态框 (HTML结构太长省略，但保留DOM占位以防JS报错) -->
+        <div id="characterModal" class="hidden fixed inset-0 z-50">
+             <div id="characterModalOverlay" class="absolute inset-0 bg-black/40"></div>
+             <div class="absolute left-1/2 top-1/2 w-full max-w-2xl px-4 -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded">
+                 <!-- 简化结构，确保ID存在 -->
+                 <h4 id="characterModalTitle"></h4>
+                 <div id="characterModalSub"></div>
+                 <button id="characterModalCopyUsernameChip"></button>
+                 <button id="characterModalClose">X</button>
+                 <img id="characterModalAvatar">
+                 <button id="characterModalOpenAvatar"></button>
+                 <button id="characterModalCopyAvatar"></button>
+                 <input id="characterModalDisplayName">
+                 <button id="characterModalSaveName">Save</button>
+                 <code id="characterModalCameoId"></code>
+                 <button id="characterModalCopyCameoId"></button>
+                 <code id="characterModalCharacterId"></code>
+                 <button id="characterModalCopyCharacterId"></button>
+                 <div id="characterModalDesc"></div>
+                 <button id="characterModalOpenSource"></button>
+                 <button id="characterModalCopySource"></button>
+                 <button id="characterModalDelete"></button>
+             </div>
         </div>
 
-        <!-- 页脚 -->
         <footer class="mt-12 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-            <p>© 2025 <a href="https://linux.do/u/thesmallhancat/summary" target="_blank" class="no-underline hover:underline" style="color: inherit;">TheSmallHanCat</a> && <a href="https://linux.do/u/tibbar/summary" target="_blank" class="no-underline hover:underline" style="color: inherit;">Tibbar</a>. All rights reserved.</p>
+            <p>© 2025 <a href="https://github.com/TheSmallHanCat/sora2api" target="_blank" class="no-underline hover:underline">Sora2API</a>. All rights reserved.</p>
         </footer>
     </main>
 
-    <!-- (Keep script and modals) -->
-    <!-- ... -->
-    
+    <!-- Modals (Add, Edit, Import, Sora2) - Restoring skeleton to ensure IDs exist -->
+    <div id="addModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"><div class="bg-background rounded-lg p-5"><input id="addTokenAT"><textarea id="addTokenST"></textarea><textarea id="addTokenRT"></textarea><input id="addTokenClientId"><input id="addTokenRemark"><input type="checkbox" id="addTokenImageEnabled"><input id="addTokenImageConcurrency"><input type="checkbox" id="addTokenVideoEnabled"><input id="addTokenVideoConcurrency"><p id="addRTRefreshHint"></p><button id="addTokenBtn"><span id="addTokenBtnText"></span><svg id="addTokenBtnSpinner"></svg></button></div></div>
+    <div id="editModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"><input id="editTokenId"><textarea id="editTokenAT"></textarea><textarea id="editTokenST"></textarea><textarea id="editTokenRT"></textarea><input id="editTokenClientId"><input id="editTokenRemark"><input type="checkbox" id="editTokenImageEnabled"><input id="editTokenImageConcurrency"><input type="checkbox" id="editTokenVideoEnabled"><input id="editTokenVideoConcurrency"><p id="editRTRefreshHint"></p><button id="editTokenBtn"><span id="editTokenBtnText"></span><svg id="editTokenBtnSpinner"></svg></button></div>
+    <div id="sora2Modal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"><input id="sora2TokenId"><input id="sora2InviteCode"><button id="sora2ActivateBtn"><span id="sora2ActivateBtnText"></span><svg id="sora2ActivateBtnSpinner"></svg></button></div>
+    <div id="importModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"><input type="file" id="importFile"><button id="importBtn"><span id="importBtnText"></span><svg id="importBtnSpinner"></svg></button></div>
+
     <script src="/static/js/manage.js?v=20251214c"></script>
 </body>
 </html>
