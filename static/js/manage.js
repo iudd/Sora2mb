@@ -654,10 +654,247 @@ const loadLogs = async () => {
 const refreshCharacters = () => { /* Stub for char refresh */ };
 const initCharactersUi = () => {}; 
 const manualATAutoRefresh = () => {};
-const submitAddToken = async () => { /* Stub */ };
-const submitEditToken = async () => { /* Stub */ };
-const convertST2AT = () => {};
-const convertRT2AT = () => {};
+const submitAddToken = async () => {
+    const at = $('addTokenAT').value.trim();
+    if (!at) return showToast('请输入 Access Token', 'warn');
+    
+    const data = {
+        token: at,
+        st: $('addTokenST').value.trim(),
+        rt: $('addTokenRT').value.trim(),
+        client_id: $('addTokenClientId').value.trim(),
+        remark: $('addTokenRemark').value.trim(),
+        image_enabled: $('addTokenImageEnabled').checked,
+        video_enabled: $('addTokenVideoEnabled').checked,
+        image_concurrency: parseInt($('addTokenImageConcurrency').value) || -1,
+        video_concurrency: parseInt($('addTokenVideoConcurrency').value) || -1
+    };
+    
+    const btn = $('addTokenBtn');
+    const btnText = $('addTokenBtnText');
+    const spinner = $('addTokenBtnSpinner');
+    
+    if(btn) btn.disabled = true;
+    if(btnText) btnText.textContent = '添加中...';
+    if(spinner) spinner.classList.remove('hidden');
+    
+    try {
+        const r = await apiRequest('/api/tokens', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        
+        if (r) {
+            const d = await r.json();
+            if (d.success) {
+                showToast('添加成功', 'success');
+                closeAddModal();
+                refreshTokens();
+                // Clear inputs
+                $('addTokenAT').value = '';
+                $('addTokenST').value = '';
+                $('addTokenRT').value = '';
+                $('addTokenClientId').value = '';
+                $('addTokenRemark').value = '';
+                if($('addRTRefreshHint')) $('addRTRefreshHint').classList.add('hidden');
+            } else {
+                showToast(d.message || '添加失败', 'error');
+            }
+        }
+    } catch (e) {
+        showToast('添加失败: ' + e.message, 'error');
+    } finally {
+        if(btn) btn.disabled = false;
+        if(btnText) btnText.textContent = '添加';
+        if(spinner) spinner.classList.add('hidden');
+    }
+};
+
+const submitEditToken = async () => {
+    const id = $('editTokenId').value;
+    const at = $('editTokenAT').value.trim();
+    if (!at) return showToast('请输入 Access Token', 'warn');
+    
+    const data = {
+        token: at,
+        st: $('editTokenST').value.trim(),
+        rt: $('editTokenRT').value.trim(),
+        client_id: $('editTokenClientId').value.trim(),
+        remark: $('editTokenRemark').value.trim(),
+        image_enabled: $('editTokenImageEnabled').checked,
+        video_enabled: $('editTokenVideoEnabled').checked,
+        image_concurrency: parseInt($('editTokenImageConcurrency').value) || -1,
+        video_concurrency: parseInt($('editTokenVideoConcurrency').value) || -1
+    };
+    
+    const btn = $('editTokenBtn');
+    const btnText = $('editTokenBtnText');
+    const spinner = $('editTokenBtnSpinner');
+    
+    if(btn) btn.disabled = true;
+    if(btnText) btnText.textContent = '保存中...';
+    if(spinner) spinner.classList.remove('hidden');
+    
+    try {
+        const r = await apiRequest(`/api/tokens/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        
+        if (r) {
+            const d = await r.json();
+            if (d.success) {
+                showToast('保存成功', 'success');
+                closeEditModal();
+                refreshTokens();
+            } else {
+                showToast(d.message || '保存失败', 'error');
+            }
+        }
+    } catch (e) {
+        showToast('保存失败: ' + e.message, 'error');
+    } finally {
+        if(btn) btn.disabled = false;
+        if(btnText) btnText.textContent = '保存';
+        if(spinner) spinner.classList.add('hidden');
+    }
+};
+
+const convertST2AT = async () => {
+    const st = $('addTokenST').value.trim();
+    if (!st) return showToast('请先输入 Session Token', 'warn');
+    
+    const btn = event.target.closest('button');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '转换中...';
+    
+    try {
+        const r = await apiRequest('/api/tokens/st2at', {
+            method: 'POST',
+            body: JSON.stringify({ st })
+        });
+        
+        if (r) {
+            const d = await r.json();
+            if (d.success) {
+                $('addTokenAT').value = d.access_token;
+                showToast('转换成功', 'success');
+            } else {
+                showToast(d.message || '转换失败', 'error');
+            }
+        }
+    } catch (e) {
+        showToast('转换失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+};
+
+const convertRT2AT = async () => {
+    const rt = $('addTokenRT').value.trim();
+    if (!rt) return showToast('请先输入 Refresh Token', 'warn');
+    
+    const btn = event.target.closest('button');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '转换中...';
+    
+    try {
+        const r = await apiRequest('/api/tokens/rt2at', {
+            method: 'POST',
+            body: JSON.stringify({ rt })
+        });
+        
+        if (r) {
+            const d = await r.json();
+            if (d.success) {
+                $('addTokenAT').value = d.access_token;
+                if (d.refresh_token) {
+                    $('addTokenRT').value = d.refresh_token;
+                    if($('addRTRefreshHint')) $('addRTRefreshHint').classList.remove('hidden');
+                }
+                showToast('转换成功', 'success');
+            } else {
+                showToast(d.message || '转换失败', 'error');
+            }
+        }
+    } catch (e) {
+        showToast('转换失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+};
+
+const convertEditST2AT = async () => {
+    const st = $('editTokenST').value.trim();
+    if (!st) return showToast('请先输入 Session Token', 'warn');
+    
+    const btn = event.target.closest('button');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '转换中...';
+    
+    try {
+        const r = await apiRequest('/api/tokens/st2at', {
+            method: 'POST',
+            body: JSON.stringify({ st })
+        });
+        
+        if (r) {
+            const d = await r.json();
+            if (d.success) {
+                $('editTokenAT').value = d.access_token;
+                showToast('转换成功', 'success');
+            } else {
+                showToast(d.message || '转换失败', 'error');
+            }
+        }
+    } catch (e) {
+        showToast('转换失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+};
+
+const convertEditRT2AT = async () => {
+    const rt = $('editTokenRT').value.trim();
+    if (!rt) return showToast('请先输入 Refresh Token', 'warn');
+    
+    const btn = event.target.closest('button');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '转换中...';
+    
+    try {
+        const r = await apiRequest('/api/tokens/rt2at', {
+            method: 'POST',
+            body: JSON.stringify({ rt })
+        });
+        
+        if (r) {
+            const d = await r.json();
+            if (d.success) {
+                $('editTokenAT').value = d.access_token;
+                if (d.refresh_token) {
+                    $('editTokenRT').value = d.refresh_token;
+                    if($('editRTRefreshHint')) $('editRTRefreshHint').classList.remove('hidden');
+                }
+                showToast('转换成功', 'success');
+            } else {
+                showToast(d.message || '转换失败', 'error');
+            }
+        }
+    } catch (e) {
+        showToast('转换失败: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+};
 const exportTokens = () => {};
 const submitImportTokens = () => {};
 const submitSora2Activate = async () => { /* Stub */ };
