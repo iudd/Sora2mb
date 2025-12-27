@@ -11,17 +11,12 @@ class GoogleDriveUploader:
 
     def __init__(self):
         self.space_url = config.google_drive_space_url
+        self.space_url_backup = config.google_drive_space_url_backup
         self.password = config.google_drive_password
 
     async def upload_file_via_api(self, file_url: str) -> Optional[str]:
         """
-        Upload file to Google Drive via Gradio API
-
-        Args:
-            file_url: URL of the file to upload
-
-        Returns:
-            Google Drive direct download link, or None if failed
+        Upload file to Google Drive via Gradio API with backup fallback
         """
         if not self.password:
             debug_logger.log_error(
@@ -31,14 +26,31 @@ class GoogleDriveUploader:
             )
             return None
 
+        # 1. Try primary URL
+        result = await self._try_upload(self.space_url, file_url)
+        if result:
+            return result
+
+        # 2. Try backup URL if available and different
+        if self.space_url_backup and self.space_url_backup != self.space_url:
+            debug_logger.log_info(f"🔄 Primary upload failed. Retrying with backup URL: {self.space_url_backup}")
+            result = await self._try_upload(self.space_url_backup, file_url)
+            if result:
+                return result
+
+        return None
+
+    async def _try_upload(self, space_url: str, file_url: str) -> Optional[str]:
+        """Helper to attempt upload to a specific space URL"""
         try:
-            debug_logger.log_info(f"🚀 Uploading to Google Drive via {self.space_url}: {file_url}")
+            debug_logger.log_info(f"🚀 Uploading to Google Drive via {space_url}: {file_url}")
 
             # Run in executor to avoid blocking
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
                 None,
                 self._sync_upload,
+                space_url,
                 file_url
             )
 
@@ -51,30 +63,36 @@ class GoogleDriveUploader:
                 else:
                     error_msg = result.get('message', 'Unknown error')
                     debug_logger.log_error(
-                        error_message=f"Google Drive upload failed: {error_msg}",
+                        error_message=f"Google Drive upload failed ({space_url}): {error_msg}",
                         status_code=500,
                         response_text=str(result)
                     )
                     return None
             else:
                 debug_logger.log_error(
-                    error_message=f"Unexpected result format from Google Drive API: {result}",
+                    error_message=f"Unexpected result format from Google Drive API ({space_url}): {result}",
                     status_code=500,
                     response_text=str(result)
                 )
                 return None
 
         except Exception as e:
-            debug_logger.log_error(
-                error_message=f"Failed to upload to Google Drive: {str(e)}",
-                status_code=500,
-                response_text=str(e)
-            )
+            error_msg = str(e)
+            if "Could not fetch config" in error_msg:
+                debug_logger.log_info(
+                    f"⚠️ Google Drive upload skipped for {space_url} (Space not accessible): {error_msg}"
+                )
+            else:
+                debug_logger.log_error(
+                    error_message=f"Failed to upload to Google Drive ({space_url}): {error_msg}",
+                    status_code=500,
+                    response_text=error_msg
+                )
             return None
 
-    def _sync_upload(self, file_url: str) -> dict:
+    def _sync_upload(self, space_url: str, file_url: str) -> dict:
         """Synchronous upload function (runs in executor)"""
-        client = Client(self.space_url)
+        client = Client(space_url)
 
         # Call "upload" API with file URL and password
         result = client.predict(

@@ -28,7 +28,7 @@ export GOOGLE_DRIVE_PASSWORD="sk-123456"
 ```toml
 [google_drive]
 enabled = true  # 启用 Google Drive 上传
-space_url = "https://iyougame-url2drive.hf.space"
+space_url = "https://leeykike-url2drive.hf.space"
 password = "sk-123456"  # 或通过环境变量设置
 ```
 

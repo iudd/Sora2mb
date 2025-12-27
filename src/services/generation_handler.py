@@ -1026,7 +1026,7 @@ class GenerationHandler:
                                                             local_url = watermark_free_url
                                                             if stream:
                                                                 yield self._format_stream_chunk(
-                                                                    reasoning_content="Warning: Google Drive upload failed. Using watermark-free URL instead...\\n"
+                                                                    reasoning_content="⚠️ Google Drive upload failed. Fallback to original watermark-free URL...\\n"
                                                                 )
                                                     except Exception as upload_error:
                                                         # Fallback to watermark-free URL if upload fails
@@ -1034,8 +1034,8 @@ class GenerationHandler:
                                                         if stream:
                                                             yield self._format_stream_chunk(
                                                                 reasoning_content=(
-                                                                    f"Warning: Failed to upload to Google Drive - {str(upload_error)}\\n"
-                                                                    "Using original watermark-free URL instead...\\n"
+                                                                    f"⚠️ Failed to upload to Google Drive: {str(upload_error)}\\n"
+                                                                    "Fallback to original watermark-free URL...\\n"
                                                                 )
                                                             )
                                                 elif config.cache_enabled:

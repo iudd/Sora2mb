@@ -48,5 +48,6 @@ at_auto_refresh_enabled = false
 # Google Drive 上传配置
 [google_drive]
 enabled = false
-space_url = "https://iyougame-url2drive.hf.space"
+space_url = "https://leeykike-url2drive.hf.space"
+space_url_backup = "https://iyougame-url2drive.hf.space"
 password = ""  # 通过环境变量 GOOGLE_DRIVE_PASSWORD 设置

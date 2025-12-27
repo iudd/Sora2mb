@@ -92,7 +92,8 @@ class Config:
             },
             "google_drive": {
                 "enabled": True,  # Default: True
-                "space_url": "https://iyougame-url2drive.hf.space",
+                "space_url": "https://leeykike-url2drive.hf.space",
+                "space_url_backup": "https://iyougame-url2drive.hf.space",
                 "password": ""
             }
         }
@@ -340,7 +341,12 @@ class Config:
     @property
     def google_drive_space_url(self) -> str:
         """Get Google Drive Gradio Space URL"""
-        return _get_env("GOOGLE_DRIVE_SPACE_URL") or self._config.get("google_drive", {}).get("space_url", "https://iyougame-url2drive.hf.space")
+        return _get_env("GOOGLE_DRIVE_SPACE_URL") or self._config.get("google_drive", {}).get("space_url", "https://leeykike-url2drive.hf.space")
+
+    @property
+    def google_drive_space_url_backup(self) -> str:
+        """Get Google Drive Gradio Space Backup URL"""
+        return _get_env("GOOGLE_DRIVE_SPACE_URL_BACKUP") or self._config.get("google_drive", {}).get("space_url_backup", "https://iyougame-url2drive.hf.space")
 
     @property
     def google_drive_password(self) -> str:
