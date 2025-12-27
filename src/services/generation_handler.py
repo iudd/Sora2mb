@@ -1972,3 +1972,114 @@ class GenerationHandler:
                 continue
 
         raise Exception(f"Cameo processing timeout after {timeout} seconds")
+
+    async def sync_latest_video(self, limit: int = 10, stream: bool = True, force_upload: bool = False) -> AsyncGenerator[str, None]:
+        """Sync latest videos from all active tokens"""
+        tokens = await self.token_manager.get_active_tokens()
+        if not tokens:
+            yield self._format_stream_chunk(reasoning_content="No active tokens found to sync.\\n")
+            yield "data: [DONE]\\n\\n"
+            return
+
+        yield self._format_stream_chunk(reasoning_content=f"Found {len(tokens)} active tokens. Starting sync...\\n")
+
+        wf_config = await self.db.get_watermark_free_config()
+        
+        for token_obj in tokens:
+            try:
+                yield self._format_stream_chunk(reasoning_content=f"\\n**Syncing token: {token_obj.name}**\\n")
+                
+                # 1. Get drafts
+                drafts = await self.sora_client.get_video_drafts(token_obj.token, limit=limit)
+                yield self._format_stream_chunk(reasoning_content=f"Found {len(drafts)} drafts.\\n")
+                
+                for draft in drafts:
+                    generation_id = draft.get("id")
+                    if not generation_id:
+                        continue
+                        
+                    prompt = draft.get("prompt", "No prompt")
+                    # Truncate prompt for display
+                    display_prompt = (prompt[:30] + '..') if len(prompt) > 30 else prompt
+                    
+                    # Check if exists
+                    existing_task = await self.db.get_task(generation_id)
+                    if existing_task and not force_upload:
+                        # yield self._format_stream_chunk(reasoning_content=f"  - Skipped {generation_id} (already exists)\\n")
+                        continue
+                        
+                    yield self._format_stream_chunk(reasoning_content=f"Processing: {display_prompt} ({generation_id})\\n")
+                    
+                    try:
+                        # 1. Publish to get Post ID
+                        post_id = await self.sora_client.post_video_for_watermark_free(generation_id, prompt, token_obj.token)
+                        yield self._format_stream_chunk(reasoning_content=f"  - Published, Post ID: {post_id}\\n")
+                        
+                        # 2. Get Watermark-free URL
+                        if not wf_config.watermark_free_enabled:
+                             yield self._format_stream_chunk(reasoning_content=f"  - Watermark-free disabled, skipping upload.\\n")
+                             continue
+
+                        parse_url = wf_config.custom_parse_url
+                        parse_token = wf_config.custom_parse_token
+                        
+                        if not parse_url:
+                             yield self._format_stream_chunk(reasoning_content=f"  - Custom parse URL not set, skipping.\\n")
+                             continue
+                             
+                        download_url = await self.sora_client.get_watermark_free_url_custom(
+                            parse_url, parse_token, post_id, token_obj.token
+                        )
+                        yield self._format_stream_chunk(reasoning_content=f"  - Got watermark-free URL\\n")
+                        
+                        # 3. Upload to Google Drive (if configured)
+                        final_url = download_url
+                        if config.google_drive_upload_enabled:
+                            yield self._format_stream_chunk(reasoning_content=f"  - Uploading to Google Drive...\\n")
+                            try:
+                                # Use prompt as filename
+                                filename = f"{generation_id}.mp4"
+                                drive_url = await self.google_drive_uploader.upload_file(download_url, filename)
+                                if drive_url:
+                                    final_url = drive_url
+                                    yield self._format_stream_chunk(reasoning_content=f"  - Upload success: {drive_url}\\n")
+                                else:
+                                    yield self._format_stream_chunk(reasoning_content=f"  - Upload failed (no URL returned), using original URL.\\n")
+                            except Exception as upload_err:
+                                yield self._format_stream_chunk(reasoning_content=f"  - Upload error: {str(upload_err)}\\n")
+                        
+                        # 4. Save/Update Task
+                        if existing_task:
+                            await self.db.update_task(
+                                generation_id, 
+                                "completed", 
+                                100.0, 
+                                result_urls=json.dumps([final_url])
+                            )
+                        else:
+                            new_task = Task(
+                                task_id=generation_id,
+                                token_id=token_obj.id,
+                                model="sora-video-unknown",
+                                prompt=prompt,
+                                status="completed",
+                                progress=100.0,
+                                result_urls=json.dumps([final_url]),
+                                created_at=datetime.now()
+                            )
+                            await self.db.create_task(new_task)
+                            
+                        yield self._format_stream_chunk(reasoning_content=f"  - Saved to database.\\n")
+                        
+                        # Clean up post
+                        await self.sora_client.delete_post(post_id, token_obj.token)
+                        yield self._format_stream_chunk(reasoning_content=f"  - Cleaned up post.\\n")
+
+                    except Exception as e:
+                         yield self._format_stream_chunk(reasoning_content=f"  - Error: {str(e)}\\n")
+
+            except Exception as e:
+                yield self._format_stream_chunk(reasoning_content=f"Error syncing token {token_obj.name}: {str(e)}\\n")
+        
+        yield self._format_stream_chunk(reasoning_content="\\nSync completed.\\n")
+        yield "data: [DONE]\\n\\n"

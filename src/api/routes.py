@@ -287,7 +287,7 @@ async def sync_latest_video(
 
     if request.stream:
         return StreamingResponse(
-            generation_handler.sync_latest_video(limit=request.limit, stream=True),
+            generation_handler.sync_latest_video(limit=request.limit, stream=True, force_upload=request.force_upload),
             media_type="text/event-stream"
         )
     else:

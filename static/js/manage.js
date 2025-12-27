@@ -332,13 +332,31 @@ const syncLatestVideo = async () => {
     }
 
     try {
-        const token = checkAuth();
-        if (!token) return;
+        // Get API Key first (required for /v1/ endpoints)
+        let apiKey = $('cfgCurrentAPIKey') ? $('cfgCurrentAPIKey').value : '';
+        if (!apiKey) {
+            // Try to fetch it if not in DOM
+            try {
+                const r = await apiRequest('/api/admin/config');
+                if (r) {
+                    const d = await r.json();
+                    apiKey = d.api_key;
+                    // Update DOM if exists
+                    if ($('cfgCurrentAPIKey')) $('cfgCurrentAPIKey').value = apiKey;
+                }
+            } catch (e) {
+                console.error('Failed to fetch API key for sync:', e);
+            }
+        }
+
+        if (!apiKey) {
+             throw new Error("无法获取 API Key，请检查系统配置");
+        }
 
         const response = await fetch('/v1/videos/sync', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
