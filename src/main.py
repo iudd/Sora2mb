@@ -160,6 +160,78 @@ async def startup_event():
     await concurrency_manager.initialize(all_tokens)
     print(f"✓ Concurrency manager initialized with {len(all_tokens)} tokens")
 
+    # Sync from JSONBin on startup if configured
+    if config.jsonbin_master_key and config.jsonbin_bin_id:
+        try:
+            print(f"[JSONBin] Syncing from cloud on startup (Bin ID: {config.jsonbin_bin_id[:8]}...)")
+            from .services.jsonbin_service import JsonBinService
+            
+            # Fetch tokens from JSONBin
+            remote_tokens = await JsonBinService.get_tokens()
+            
+            if remote_tokens:
+                added_count = 0
+                updated_count = 0
+                
+                for item in remote_tokens:
+                    email = item.get("email")
+                    access_token = item.get("access_token") or item.get("token")
+                    
+                    if not email or not access_token:
+                        continue
+                    
+                    existing_token = await db.get_token_by_email(email)
+                    
+                    if existing_token:
+                        # Update existing token
+                        await token_manager.update_token(
+                            token_id=existing_token.id,
+                            token=access_token,
+                            st=item.get("session_token") or item.get("st"),
+                            rt=item.get("refresh_token") or item.get("rt"),
+                            image_enabled=item.get("image_enabled", True),
+                            video_enabled=item.get("video_enabled", True),
+                            image_concurrency=item.get("image_concurrency", -1),
+                            video_concurrency=item.get("video_concurrency", -1)
+                        )
+                        await token_manager.update_token_status(existing_token.id, item.get("is_active", True))
+                        if concurrency_manager:
+                            await concurrency_manager.reset_token(
+                                existing_token.id,
+                                image_concurrency=item.get("image_concurrency", -1),
+                                video_concurrency=item.get("video_concurrency", -1)
+                            )
+                        updated_count += 1
+                    else:
+                        # Add new token
+                        new_token = await token_manager.add_token(
+                            token_value=access_token,
+                            st=item.get("session_token") or item.get("st"),
+                            rt=item.get("refresh_token") or item.get("rt"),
+                            update_if_exists=False,
+                            image_enabled=item.get("image_enabled", True),
+                            video_enabled=item.get("video_enabled", True),
+                            image_concurrency=item.get("image_concurrency", -1),
+                            video_concurrency=item.get("video_concurrency", -1)
+                        )
+                        if not item.get("is_active", True):
+                            await token_manager.disable_token(new_token.id)
+                        if concurrency_manager:
+                            await concurrency_manager.reset_token(
+                                new_token.id,
+                                image_concurrency=item.get("image_concurrency", -1),
+                                video_concurrency=item.get("video_concurrency", -1)
+                            )
+                        added_count += 1
+                
+                print(f"[JSONBin] Startup sync completed: {added_count} added, {updated_count} updated")
+            else:
+                print("[JSONBin] No tokens found in cloud")
+        except Exception as e:
+            print(f"[JSONBin] Warning: Failed to sync from cloud on startup: {e}")
+    else:
+        print("[JSONBin] Startup sync skipped: credentials not configured")
+
     # Start file cache cleanup task
     await generation_handler.file_cache.start_cleanup_task()
 

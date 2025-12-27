@@ -264,6 +264,7 @@ async def add_token(request: AddTokenRequest, token: str = Depends(verify_admin_
         # Auto-sync to JSONBin if configured
         if config.jsonbin_master_key:
              try:
+                 print(f"[JSONBin] Auto-syncing after token add (Bin ID: {config.jsonbin_bin_id[:8]}...)")
                  # Re-fetch all tokens to ensure full sync
                  all_tokens = await token_manager.get_all_tokens()
                  export_data = []
@@ -280,8 +281,11 @@ async def add_token(request: AddTokenRequest, token: str = Depends(verify_admin_
                         "video_concurrency": t.video_concurrency
                     })
                  await JsonBinService.update_tokens(export_data)
+                 print(f"[JSONBin] Successfully synced {len(export_data)} tokens to JSONBin")
              except Exception as e:
-                 print(f"Warning: Failed to auto-sync to JSONBin after add: {e}")
+                 print(f"[JSONBin] Warning: Failed to auto-sync to JSONBin after add: {e}")
+        else:
+            print("[JSONBin] Auto-sync skipped: JSONBIN_MASTER_KEY not configured")
                  
         return {"success": True, "message": "Token 添加成功", "token_id": new_token.id}
     except ValueError as e:
@@ -561,6 +565,7 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
         # Auto-sync to JSONBin if configured
         if config.jsonbin_master_key:
              try:
+                 print(f"[JSONBin] Auto-syncing after token import (Bin ID: {config.jsonbin_bin_id[:8]}...)")
                  # Re-fetch all tokens to ensure full sync
                  all_tokens = await token_manager.get_all_tokens()
                  export_data = []
@@ -577,8 +582,11 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
                         "video_concurrency": t.video_concurrency
                     })
                  await JsonBinService.update_tokens(export_data)
+                 print(f"[JSONBin] Successfully synced {len(export_data)} tokens to JSONBin")
              except Exception as e:
-                 print(f"Warning: Failed to auto-sync to JSONBin after import: {e}")
+                 print(f"[JSONBin] Warning: Failed to auto-sync to JSONBin after import: {e}")
+        else:
+            print("[JSONBin] Auto-sync skipped: JSONBIN_MASTER_KEY not configured")
 
         return {
             "success": True,
