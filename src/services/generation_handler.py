@@ -880,11 +880,14 @@ class GenerationHandler:
 
                                             try:
                                                 # 1) Publish to get post_id (retry forever unless cancelled)
-                                                post_id = await self.sora_client.post_video_for_watermark_free(
+                                                publish_result = await self.sora_client.post_video_for_watermark_free(
                                                     generation_id=generation_id,
                                                     prompt=prompt,
                                                     token=token
                                                 )
+                                                post_id = publish_result.get("post", {}).get("id")
+                                                profile_data = publish_result.get("profile", {})
+                                                
                                                 debug_logger.log_info(f"Received post_id: {post_id}")
                                                 if not post_id:
                                                     raise Exception("Failed to get post ID from publish API")
@@ -1023,8 +1026,30 @@ class GenerationHandler:
                                                                 reasoning_content="Uploading watermark-free video to Google Drive...\\n"
                                                             )
                                                         
+                                                        # Prepare metadata for Google Drive upload
+                                                        username = profile_data.get("username")
+                                                        user_id = profile_data.get("user_id")
+                                                        
+                                                        # Get created_at from post data or current time
+                                                        post_data = publish_result.get("post", {})
+                                                        posted_at_ts = post_data.get("posted_at")
+                                                        if posted_at_ts:
+                                                            created_at = datetime.fromtimestamp(posted_at_ts).isoformat()
+                                                        else:
+                                                            created_at = datetime.now().isoformat()
+                                                            
+                                                        metadata = {
+                                                            "post_id": post_id,
+                                                            "user_id": user_id,
+                                                            "created_at": created_at
+                                                        }
+                                                        
                                                         # Upload to Google Drive via Gradio API
-                                                        local_url = await self.google_drive_uploader.upload_file_via_api(watermark_free_url)
+                                                        local_url = await self.google_drive_uploader.upload_file_via_api(
+                                                            watermark_free_url,
+                                                            username=username,
+                                                            metadata=metadata
+                                                        )
                                                         
                                                         if local_url:
                                                             if stream:

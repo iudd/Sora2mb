@@ -14,7 +14,7 @@ class GoogleDriveUploader:
         self.space_url_backup = config.google_drive_space_url_backup
         self.password = config.google_drive_password
 
-    async def upload_file_via_api(self, file_url: str) -> Optional[str]:
+    async def upload_file_via_api(self, file_url: str, username: Optional[str] = None, metadata: Optional[dict] = None) -> Optional[str]:
         """
         Upload file to Google Drive via Gradio API with backup fallback
         """
@@ -27,20 +27,20 @@ class GoogleDriveUploader:
             return None
 
         # 1. Try primary URL
-        result = await self._try_upload(self.space_url, file_url)
+        result = await self._try_upload(self.space_url, file_url, username, metadata)
         if result:
             return result
 
         # 2. Try backup URL if available and different
         if self.space_url_backup and self.space_url_backup != self.space_url:
             debug_logger.log_info(f"🔄 Primary upload failed. Retrying with backup URL: {self.space_url_backup}")
-            result = await self._try_upload(self.space_url_backup, file_url)
+            result = await self._try_upload(self.space_url_backup, file_url, username, metadata)
             if result:
                 return result
 
         return None
 
-    async def _try_upload(self, space_url: str, file_url: str) -> Optional[str]:
+    async def _try_upload(self, space_url: str, file_url: str, username: Optional[str] = None, metadata: Optional[dict] = None) -> Optional[str]:
         """Helper to attempt upload to a specific space URL"""
         try:
             debug_logger.log_info(f"🚀 Uploading to Google Drive via {space_url}: {file_url}")
@@ -51,14 +51,17 @@ class GoogleDriveUploader:
                 None,
                 self._sync_upload,
                 space_url,
-                file_url
+                file_url,
+                username,
+                metadata
             )
 
             if result and isinstance(result, dict):
                 status = result.get('status')
                 if status == 'success':
                     download_link = result.get('download_link')
-                    debug_logger.log_info(f"✅ Google Drive upload success: {download_link}")
+                    folder_path = result.get('folder_path')
+                    debug_logger.log_info(f"✅ Google Drive upload success: {download_link} (Folder: {folder_path})")
                     return download_link
                 else:
                     error_msg = result.get('message', 'Unknown error')
@@ -90,15 +93,22 @@ class GoogleDriveUploader:
                 )
             return None
 
-    def _sync_upload(self, space_url: str, file_url: str) -> dict:
+    def _sync_upload(self, space_url: str, file_url: str, username: Optional[str] = None, metadata: Optional[dict] = None) -> dict:
         """Synchronous upload function (runs in executor)"""
         client = Client(space_url)
 
-        # Call "upload" API with file URL and password
+        # Construct request payload for /upload_json endpoint
+        payload = {
+            "url": file_url,
+            "password": self.password,
+            "username": username,
+            "metadata": metadata
+        }
+
+        # Call "upload_json" API
         result = client.predict(
-            file_url,      # 参数1: URL
-            self.password,  # 参数2: 密码
-            api_name="/upload"
+            payload,      # 参数1: JSON对象
+            api_name="/upload_json"
         )
 
         return result

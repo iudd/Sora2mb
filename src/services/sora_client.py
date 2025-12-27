@@ -301,7 +301,7 @@ class SoraClient:
         # The API returns a list directly
         return result if isinstance(result, list) else []
 
-    async def post_video_for_watermark_free(self, generation_id: str, prompt: str, token: str) -> str:
+    async def post_video_for_watermark_free(self, generation_id: str, prompt: str, token: str) -> Dict[str, Any]:
         """Post video to get watermark-free version
 
         Args:
@@ -310,7 +310,7 @@ class SoraClient:
             token: Access token
 
         Returns:
-            Post ID (e.g., s_690ce161c2488191a3476e9969911522)
+            Full API response dictionary containing 'post' and 'profile'
         """
         json_data = {
             "attachments_to_create": [
@@ -325,8 +325,7 @@ class SoraClient:
         # 发布请求需要添加 sentinel token
         result = await self._make_request("POST", "/project_y/post", token, json_data=json_data, add_sentinel_token=True)
 
-        # 返回 post.id
-        return result.get("post", {}).get("id", "")
+        return result
 
     async def delete_post(self, post_id: str, token: str) -> bool:
         """Delete a published post
