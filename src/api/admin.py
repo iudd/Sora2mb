@@ -17,6 +17,7 @@ from ..services.sora_client import SoraClient
 from ..services.concurrency_manager import ConcurrencyManager
 from ..core.database import Database
 from ..core.models import Token, AdminConfig, ProxyConfig, CharacterCard, CharacterCardResponse
+from ..services.jsonbin_service import JsonBinService
 
 router = APIRouter()
 
@@ -259,6 +260,29 @@ async def add_token(request: AddTokenRequest, token: str = Depends(verify_admin_
                 image_concurrency=request.image_concurrency,
                 video_concurrency=request.video_concurrency
             )
+            
+        # Auto-sync to JSONBin if configured
+        if config.jsonbin_master_key:
+             try:
+                 # Re-fetch all tokens to ensure full sync
+                 all_tokens = await token_manager.get_all_tokens()
+                 export_data = []
+                 for t in all_tokens:
+                    export_data.append({
+                        "email": t.email,
+                        "access_token": t.token,
+                        "session_token": t.st,
+                        "refresh_token": t.rt,
+                        "is_active": t.is_active,
+                        "image_enabled": t.image_enabled,
+                        "video_enabled": t.video_enabled,
+                        "image_concurrency": t.image_concurrency,
+                        "video_concurrency": t.video_concurrency
+                    })
+                 await JsonBinService.update_tokens(export_data)
+             except Exception as e:
+                 print(f"Warning: Failed to auto-sync to JSONBin after add: {e}")
+                 
         return {"success": True, "message": "Token 添加成功", "token_id": new_token.id}
     except ValueError as e:
         # Token already exists
@@ -368,6 +392,115 @@ async def delete_token(token_id: int, token: str = Depends(verify_admin_token)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/api/tokens/sync/jsonbin/pull")
+async def pull_from_jsonbin(token: str = Depends(verify_admin_token)):
+    """Pull tokens from JSONBin and merge into database"""
+    try:
+        # 1. Fetch from JSONBin
+        remote_tokens = await JsonBinService.get_tokens()
+        
+        added_count = 0
+        updated_count = 0
+        
+        # 2. Merge logic (similar to import_tokens)
+        for item in remote_tokens:
+            # Normalize fields
+            email = item.get("email")
+            access_token = item.get("access_token") or item.get("token")
+            
+            if not email or not access_token:
+                continue
+                
+            # Check if token with this email already exists
+            existing_token = await db.get_token_by_email(email)
+
+            if existing_token:
+                # Update existing token
+                await token_manager.update_token(
+                    token_id=existing_token.id,
+                    token=access_token,
+                    st=item.get("session_token") or item.get("st"),
+                    rt=item.get("refresh_token") or item.get("rt"),
+                    image_enabled=item.get("image_enabled", True),
+                    video_enabled=item.get("video_enabled", True),
+                    image_concurrency=item.get("image_concurrency", -1),
+                    video_concurrency=item.get("video_concurrency", -1)
+                )
+                # Update active status
+                is_active = item.get("is_active", True)
+                await token_manager.update_token_status(existing_token.id, is_active)
+                
+                # Reset concurrency counters
+                if concurrency_manager:
+                    await concurrency_manager.reset_token(
+                        existing_token.id,
+                        image_concurrency=item.get("image_concurrency", -1),
+                        video_concurrency=item.get("video_concurrency", -1)
+                    )
+                updated_count += 1
+            else:
+                # Add new token
+                new_token = await token_manager.add_token(
+                    token_value=access_token,
+                    st=item.get("session_token") or item.get("st"),
+                    rt=item.get("refresh_token") or item.get("rt"),
+                    update_if_exists=False,
+                    image_enabled=item.get("image_enabled", True),
+                    video_enabled=item.get("video_enabled", True),
+                    image_concurrency=item.get("image_concurrency", -1),
+                    video_concurrency=item.get("video_concurrency", -1)
+                )
+                # Set active status
+                if not item.get("is_active", True):
+                    await token_manager.disable_token(new_token.id)
+                
+                # Initialize concurrency counters
+                if concurrency_manager:
+                    await concurrency_manager.reset_token(
+                        new_token.id,
+                        image_concurrency=item.get("image_concurrency", -1),
+                        video_concurrency=item.get("video_concurrency", -1)
+                    )
+                added_count += 1
+                
+        return {
+            "success": True, 
+            "message": f"Synced from JSONBin: {added_count} added, {updated_count} updated",
+            "added": added_count,
+            "updated": updated_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to pull from JSONBin: {str(e)}")
+
+@router.post("/api/tokens/sync/jsonbin/push")
+async def push_to_jsonbin(token: str = Depends(verify_admin_token)):
+    """Push all local tokens to JSONBin"""
+    try:
+        # 1. Get all local tokens
+        tokens = await token_manager.get_all_tokens()
+        
+        # 2. Format for JSONBin
+        export_data = []
+        for t in tokens:
+            export_data.append({
+                "email": t.email,
+                "access_token": t.token,
+                "session_token": t.st,
+                "refresh_token": t.rt,
+                "is_active": t.is_active,
+                "image_enabled": t.image_enabled,
+                "video_enabled": t.video_enabled,
+                "image_concurrency": t.image_concurrency,
+                "video_concurrency": t.video_concurrency
+            })
+            
+        # 3. Push
+        await JsonBinService.update_tokens(export_data)
+        
+        return {"success": True, "message": f"Successfully pushed {len(export_data)} tokens to JSONBin"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to push to JSONBin: {str(e)}")
+
 @router.post("/api/tokens/import")
 async def import_tokens(request: ImportTokensRequest, token: str = Depends(verify_admin_token)):
     """Import tokens in append mode (update if exists, add if not)"""
@@ -424,6 +557,28 @@ async def import_tokens(request: ImportTokensRequest, token: str = Depends(verif
                         video_concurrency=import_item.video_concurrency
                     )
                 added_count += 1
+        
+        # Auto-sync to JSONBin if configured
+        if config.jsonbin_master_key:
+             try:
+                 # Re-fetch all tokens to ensure full sync
+                 all_tokens = await token_manager.get_all_tokens()
+                 export_data = []
+                 for t in all_tokens:
+                    export_data.append({
+                        "email": t.email,
+                        "access_token": t.token,
+                        "session_token": t.st,
+                        "refresh_token": t.rt,
+                        "is_active": t.is_active,
+                        "image_enabled": t.image_enabled,
+                        "video_enabled": t.video_enabled,
+                        "image_concurrency": t.image_concurrency,
+                        "video_concurrency": t.video_concurrency
+                    })
+                 await JsonBinService.update_tokens(export_data)
+             except Exception as e:
+                 print(f"Warning: Failed to auto-sync to JSONBin after import: {e}")
 
         return {
             "success": True,

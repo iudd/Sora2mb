@@ -85,16 +85,16 @@ const apiRequest = async (url, opts = {}) => {
         // Monkey-patch .json() to handle weird browser extension interference
         const originalJson = r.json.bind(r);
         r.json = async () => {
-             const text = await r.text();
-             if (!text) return null;
-             try {
-                 return JSON.parse(text);
-             } catch (e) {
-                 console.error("JSON Parse Error:", e, text);
-                 throw new Error(`Response parse failed: ${e.message}`);
-             }
+            const text = await r.text();
+            if (!text) return null;
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error("JSON Parse Error:", e, text);
+                throw new Error(`Response parse failed: ${e.message}`);
+            }
         };
-        
+
         if (r.status === 401) {
             localStorage.removeItem('adminToken');
             location.href = '/login';
@@ -133,16 +133,16 @@ const apiRequestTimed = async (url, opts = {}, timeoutMs = TOKEN_TEST_TIMEOUT_MS
 const switchTab = (t) => {
     const cap = n => n.charAt(0).toUpperCase() + n.slice(1);
     const tabs = ['tokens', 'settings', 'logs', 'generate', 'characters', 'videos'];
-    
+
     tabs.forEach(n => {
         const active = n === t;
         const panel = $(`panel${cap(n)}`);
         const tabBtn = $(`tab${cap(n)}`);
-        
+
         if (panel) {
             panel.classList.toggle('hidden', !active);
         }
-        
+
         if (tabBtn) {
             tabBtn.classList.toggle('border-primary', active);
             tabBtn.classList.toggle('text-primary', active);
@@ -208,7 +208,7 @@ const formatExpiry = (exp) => {
     const diff = d - now;
     const dateStr = d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
     const timeStr = d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
-    
+
     if (diff < 0) return `<span class="text-red-600">${dateStr} ${timeStr}</span>`;
     const days = Math.floor(diff / 864e5);
     if (days < 7) return `<span class="text-orange-600">${dateStr} ${timeStr}</span>`;
@@ -350,7 +350,7 @@ const syncLatestVideo = async () => {
         }
 
         if (!apiKey) {
-             throw new Error("无法获取 API Key，请检查系统配置");
+            throw new Error("无法获取 API Key，请检查系统配置");
         }
 
         const response = await fetch('/v1/videos/sync', {
@@ -372,24 +372,24 @@ const syncLatestVideo = async () => {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        
+
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            
+
             const chunk = decoder.decode(value);
             const lines = chunk.split('\\n');
-            
+
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
                     const jsonStr = line.slice(6).trim();
                     if (jsonStr === '[DONE]') continue;
                     if (!jsonStr) continue;
-                    
+
                     try {
                         const data = JSON.parse(jsonStr);
                         const delta = data.choices?.[0]?.delta || {};
-                        
+
                         if (delta.reasoning_content) {
                             if (logEl) {
                                 logEl.textContent += delta.reasoning_content;
@@ -409,7 +409,7 @@ const syncLatestVideo = async () => {
                 }
             }
         }
-        
+
         if (logEl) logEl.textContent += '\\n✅ 同步流程结束';
 
     } catch (e) {
@@ -444,7 +444,7 @@ const loadProxyConfig = async () => {
             if ($('cfgProxyEnabled')) $('cfgProxyEnabled').checked = d.proxy_enabled || false;
             if ($('cfgProxyUrl')) $('cfgProxyUrl').value = d.proxy_url || '';
         }
-    } catch(e) {}
+    } catch (e) { }
 };
 
 const loadWatermarkFreeConfig = async () => {
@@ -459,45 +459,45 @@ const loadWatermarkFreeConfig = async () => {
             toggleWatermarkFreeOptions();
             toggleCustomParseOptions();
         }
-    } catch(e) {}
+    } catch (e) { }
 };
 
-const loadCacheConfig = async () => { 
+const loadCacheConfig = async () => {
     try {
         const r = await apiRequest('/api/cache/config');
         if (r) {
             const d = await r.json();
             if (d.success && d.config) {
-                 if($('cfgCacheEnabled')) $('cfgCacheEnabled').checked = d.config.enabled !== false;
-                 if($('cfgCacheTimeout')) $('cfgCacheTimeout').value = d.config.timeout || 7200;
-                 if($('cfgCacheBaseUrl')) $('cfgCacheBaseUrl').value = d.config.base_url || '';
-                 toggleCacheOptions();
+                if ($('cfgCacheEnabled')) $('cfgCacheEnabled').checked = d.config.enabled !== false;
+                if ($('cfgCacheTimeout')) $('cfgCacheTimeout').value = d.config.timeout || 7200;
+                if ($('cfgCacheBaseUrl')) $('cfgCacheBaseUrl').value = d.config.base_url || '';
+                toggleCacheOptions();
             }
         }
-    } catch(e) {}
+    } catch (e) { }
 };
-const loadGenerationTimeout = async () => { 
-     try {
+const loadGenerationTimeout = async () => {
+    try {
         const r = await apiRequest('/api/generation/timeout');
         if (r) {
             const d = await r.json();
             if (d.success && d.config) {
-                 if($('cfgImageTimeout')) $('cfgImageTimeout').value = d.config.image_timeout || 300;
-                 if($('cfgVideoTimeout')) $('cfgVideoTimeout').value = d.config.video_timeout || 1500;
+                if ($('cfgImageTimeout')) $('cfgImageTimeout').value = d.config.image_timeout || 300;
+                if ($('cfgVideoTimeout')) $('cfgVideoTimeout').value = d.config.video_timeout || 1500;
             }
         }
-    } catch(e) {}
+    } catch (e) { }
 };
-const loadATAutoRefreshConfig = async () => { 
+const loadATAutoRefreshConfig = async () => {
     try {
         const r = await apiRequest('/api/token-refresh/config');
         if (r) {
             const d = await r.json();
             if (d.success && d.config) {
-                 if($('atAutoRefreshToggle')) $('atAutoRefreshToggle').checked = d.config.at_auto_refresh_enabled || false;
+                if ($('atAutoRefreshToggle')) $('atAutoRefreshToggle').checked = d.config.at_auto_refresh_enabled || false;
             }
         }
-    } catch(e) {}
+    } catch (e) { }
 };
 
 // === UI Toggles ===
@@ -524,10 +524,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const savedTab = localStorage.getItem('manage_active_tab');
     const initialTab = savedTab || 'tokens';
     switchTab(initialTab);
-    
+
     // Initial data load
     if (initialTab === 'tokens') refreshTokens();
-    
+
     // Add event listeners for new buttons if they weren't caught by inline onclick
     const syncBtn = $('btnSyncVideo');
     if (syncBtn) {
@@ -537,100 +537,100 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // === Dummy Implementations for missing functions to prevent crash ===
 // These should be fully implemented based on previous manage.js content if needed
-const logout = () => { 
-    if(!confirmStep('logout','再次点击确认退出登录',{ttl:4200,type:'warn'}))return;
-    localStorage.removeItem('adminToken'); 
-    location.href='/login'; 
+const logout = () => {
+    if (!confirmStep('logout', '再次点击确认退出登录', { ttl: 4200, type: 'warn' })) return;
+    localStorage.removeItem('adminToken');
+    location.href = '/login';
 };
 
 const copySora2Code = async (code) => {
-    if(!code){showToast('没有可复制的邀请码','error');return}
-    try{
+    if (!code) { showToast('没有可复制的邀请码', 'error'); return }
+    try {
         await navigator.clipboard.writeText(code);
-        showToast(`邀请码已复制: ${code}`,'success');
-    }catch(e){
-        showToast('复制失败','error');
+        showToast(`邀请码已复制: ${code}`, 'success');
+    } catch (e) {
+        showToast('复制失败', 'error');
     }
 };
 
 const openSora2Modal = (id) => {
-    $('sora2TokenId').value=id;
-    $('sora2InviteCode').value='';
+    $('sora2TokenId').value = id;
+    $('sora2InviteCode').value = '';
     $('sora2Modal').classList.remove('hidden');
 };
 
 const closeSora2Modal = () => $('sora2Modal').classList.add('hidden');
 
-const deleteToken = async (id, skipConfirm=false) => {
-    if(!skipConfirm&&!confirmStep('delete_token_'+id,`再次点击确认删除 Token（ID: ${id}）`,{ttl:5200,type:'warn'}))return;
-    try{
-        const r=await apiRequest(`/api/tokens/${id}`,{method:'DELETE'});
-        if(!r)return;
-        const d=await r.json();
-        if(d.success){
+const deleteToken = async (id, skipConfirm = false) => {
+    if (!skipConfirm && !confirmStep('delete_token_' + id, `再次点击确认删除 Token（ID: ${id}）`, { ttl: 5200, type: 'warn' })) return;
+    try {
+        const r = await apiRequest(`/api/tokens/${id}`, { method: 'DELETE' });
+        if (!r) return;
+        const d = await r.json();
+        if (d.success) {
             await refreshTokens();
-            if(!skipConfirm)showToast('删除成功','success');
+            if (!skipConfirm) showToast('删除成功', 'success');
             return true;
-        }else{
-            if(!skipConfirm)showToast('删除失败','error');
+        } else {
+            if (!skipConfirm) showToast('删除失败', 'error');
             return false;
         }
-    }catch(e){
-        if(!skipConfirm)showToast('删除失败: '+e.message,'error');
+    } catch (e) {
+        if (!skipConfirm) showToast('删除失败: ' + e.message, 'error');
         return false;
     }
 };
 
 const testToken = async (id) => {
-    const tokenId=Number(id);
-    if(Number.isFinite(tokenId)&&testingTokenIds.has(tokenId)){
-        showToast('该账号正在测试中，请稍候…','info');
+    const tokenId = Number(id);
+    if (Number.isFinite(tokenId) && testingTokenIds.has(tokenId)) {
+        showToast('该账号正在测试中，请稍候…', 'info');
         return;
     }
-    const row=document.querySelector(`#tokenTableBody tr[data-token-id="${tokenId}"]`);
-    if(row) row.dataset.testing='1';
+    const row = document.querySelector(`#tokenTableBody tr[data-token-id="${tokenId}"]`);
+    if (row) row.dataset.testing = '1';
 
     testingTokenIds.add(tokenId);
     renderTokens(); // Re-render to show loading state properly
 
-    try{
-        showToast('正在测试Token...','info');
-        const r=await apiRequestTimed(`/api/tokens/${tokenId}/test`,{method:'POST'});
-        if(!r) return;
-        const d=await r.json();
-        if(d&&d.success&&d.status==='success'){
+    try {
+        showToast('正在测试Token...', 'info');
+        const r = await apiRequestTimed(`/api/tokens/${tokenId}/test`, { method: 'POST' });
+        if (!r) return;
+        const d = await r.json();
+        if (d && d.success && d.status === 'success') {
             // Update local data
-            const idx=allTokens.findIndex(t=>t.id===tokenId);
-            if(idx>=0) {
-                 // Simplistic merge for display update
-                 if(d.email) allTokens[idx].email = d.email;
+            const idx = allTokens.findIndex(t => t.id === tokenId);
+            if (idx >= 0) {
+                // Simplistic merge for display update
+                if (d.email) allTokens[idx].email = d.email;
             }
-            showToast('Token有效！','success');
-        }else{
-            showToast(`Token无效: ${(d&&d.message)||'未知错误'}`,'error');
+            showToast('Token有效！', 'success');
+        } else {
+            showToast(`Token无效: ${(d && d.message) || '未知错误'}`, 'error');
         }
-    }catch(e){
-        showToast('测试失败: '+e.message,'error');
-    }finally{
+    } catch (e) {
+        showToast('测试失败: ' + e.message, 'error');
+    } finally {
         testingTokenIds.delete(tokenId);
-        if(row) delete row.dataset.testing;
+        if (row) delete row.dataset.testing;
         renderTokens();
     }
 };
 
 const openEditModal = (id) => {
-    const token=allTokens.find(t=>t.id===id);
-    if(!token)return showToast('Token不存在','error');
-    $('editTokenId').value=token.id;
-    $('editTokenAT').value=token.token||'';
-    $('editTokenST').value=token.st||'';
-    $('editTokenRT').value=token.rt||'';
-    $('editTokenClientId').value=token.client_id||'';
-    $('editTokenRemark').value=token.remark||'';
-    $('editTokenImageEnabled').checked=token.image_enabled!==false;
-    $('editTokenVideoEnabled').checked=token.video_enabled!==false;
-    $('editTokenImageConcurrency').value=token.image_concurrency||'-1';
-    $('editTokenVideoConcurrency').value=token.video_concurrency||'-1';
+    const token = allTokens.find(t => t.id === id);
+    if (!token) return showToast('Token不存在', 'error');
+    $('editTokenId').value = token.id;
+    $('editTokenAT').value = token.token || '';
+    $('editTokenST').value = token.st || '';
+    $('editTokenRT').value = token.rt || '';
+    $('editTokenClientId').value = token.client_id || '';
+    $('editTokenRemark').value = token.remark || '';
+    $('editTokenImageEnabled').checked = token.image_enabled !== false;
+    $('editTokenVideoEnabled').checked = token.video_enabled !== false;
+    $('editTokenImageConcurrency').value = token.image_concurrency || '-1';
+    $('editTokenVideoConcurrency').value = token.video_concurrency || '-1';
     $('editModal').classList.remove('hidden');
 };
 
@@ -655,8 +655,7 @@ const toggleToken = async (id, isActive) => {
 const openAddModal = () => $('addModal').classList.remove('hidden');
 const closeAddModal = () => $('addModal').classList.add('hidden');
 const closeEditModal = () => $('editModal').classList.add('hidden');
-const openImportModal = () => $('importModal').classList.remove('hidden');
-const closeImportModal = () => $('importModal').classList.add('hidden');
+
 
 const refreshLogs = async () => { await loadLogs(); };
 const loadLogs = async () => {
@@ -670,12 +669,12 @@ const loadLogs = async () => {
 };
 
 const refreshCharacters = () => { /* Stub for char refresh */ };
-const initCharactersUi = () => {}; 
-const manualATAutoRefresh = () => {};
+const initCharactersUi = () => { };
+const manualATAutoRefresh = () => { };
 const submitAddToken = async () => {
     const at = $('addTokenAT').value.trim();
     if (!at) return showToast('请输入 Access Token', 'warn');
-    
+
     const data = {
         token: at,
         st: $('addTokenST').value.trim(),
@@ -687,21 +686,21 @@ const submitAddToken = async () => {
         image_concurrency: parseInt($('addTokenImageConcurrency').value) || -1,
         video_concurrency: parseInt($('addTokenVideoConcurrency').value) || -1
     };
-    
+
     const btn = $('addTokenBtn');
     const btnText = $('addTokenBtnText');
     const spinner = $('addTokenBtnSpinner');
-    
-    if(btn) btn.disabled = true;
-    if(btnText) btnText.textContent = '添加中...';
-    if(spinner) spinner.classList.remove('hidden');
-    
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.textContent = '添加中...';
+    if (spinner) spinner.classList.remove('hidden');
+
     try {
         const r = await apiRequest('/api/tokens', {
             method: 'POST',
             body: JSON.stringify(data)
         });
-        
+
         if (r) {
             const d = await r.json();
             if (d.success) {
@@ -714,7 +713,7 @@ const submitAddToken = async () => {
                 $('addTokenRT').value = '';
                 $('addTokenClientId').value = '';
                 $('addTokenRemark').value = '';
-                if($('addRTRefreshHint')) $('addRTRefreshHint').classList.add('hidden');
+                if ($('addRTRefreshHint')) $('addRTRefreshHint').classList.add('hidden');
             } else {
                 showToast(d.message || '添加失败', 'error');
             }
@@ -722,9 +721,9 @@ const submitAddToken = async () => {
     } catch (e) {
         showToast('添加失败: ' + e.message, 'error');
     } finally {
-        if(btn) btn.disabled = false;
-        if(btnText) btnText.textContent = '添加';
-        if(spinner) spinner.classList.add('hidden');
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = '添加';
+        if (spinner) spinner.classList.add('hidden');
     }
 };
 
@@ -732,7 +731,7 @@ const submitEditToken = async () => {
     const id = $('editTokenId').value;
     const at = $('editTokenAT').value.trim();
     if (!at) return showToast('请输入 Access Token', 'warn');
-    
+
     const data = {
         token: at,
         st: $('editTokenST').value.trim(),
@@ -744,21 +743,21 @@ const submitEditToken = async () => {
         image_concurrency: parseInt($('editTokenImageConcurrency').value) || -1,
         video_concurrency: parseInt($('editTokenVideoConcurrency').value) || -1
     };
-    
+
     const btn = $('editTokenBtn');
     const btnText = $('editTokenBtnText');
     const spinner = $('editTokenBtnSpinner');
-    
-    if(btn) btn.disabled = true;
-    if(btnText) btnText.textContent = '保存中...';
-    if(spinner) spinner.classList.remove('hidden');
-    
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.textContent = '保存中...';
+    if (spinner) spinner.classList.remove('hidden');
+
     try {
         const r = await apiRequest(`/api/tokens/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data)
         });
-        
+
         if (r) {
             const d = await r.json();
             if (d.success) {
@@ -772,27 +771,27 @@ const submitEditToken = async () => {
     } catch (e) {
         showToast('保存失败: ' + e.message, 'error');
     } finally {
-        if(btn) btn.disabled = false;
-        if(btnText) btnText.textContent = '保存';
-        if(spinner) spinner.classList.add('hidden');
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = '保存';
+        if (spinner) spinner.classList.add('hidden');
     }
 };
 
 const convertST2AT = async () => {
     const st = $('addTokenST').value.trim();
     if (!st) return showToast('请先输入 Session Token', 'warn');
-    
+
     const btn = event.target.closest('button');
     const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = '转换中...';
-    
+
     try {
         const r = await apiRequest('/api/tokens/st2at', {
             method: 'POST',
             body: JSON.stringify({ st })
         });
-        
+
         if (r) {
             const d = await r.json();
             if (d.success) {
@@ -813,25 +812,25 @@ const convertST2AT = async () => {
 const convertRT2AT = async () => {
     const rt = $('addTokenRT').value.trim();
     if (!rt) return showToast('请先输入 Refresh Token', 'warn');
-    
+
     const btn = event.target.closest('button');
     const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = '转换中...';
-    
+
     try {
         const r = await apiRequest('/api/tokens/rt2at', {
             method: 'POST',
             body: JSON.stringify({ rt })
         });
-        
+
         if (r) {
             const d = await r.json();
             if (d.success) {
                 $('addTokenAT').value = d.access_token;
                 if (d.refresh_token) {
                     $('addTokenRT').value = d.refresh_token;
-                    if($('addRTRefreshHint')) $('addRTRefreshHint').classList.remove('hidden');
+                    if ($('addRTRefreshHint')) $('addRTRefreshHint').classList.remove('hidden');
                 }
                 showToast('转换成功', 'success');
             } else {
@@ -849,18 +848,18 @@ const convertRT2AT = async () => {
 const convertEditST2AT = async () => {
     const st = $('editTokenST').value.trim();
     if (!st) return showToast('请先输入 Session Token', 'warn');
-    
+
     const btn = event.target.closest('button');
     const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = '转换中...';
-    
+
     try {
         const r = await apiRequest('/api/tokens/st2at', {
             method: 'POST',
             body: JSON.stringify({ st })
         });
-        
+
         if (r) {
             const d = await r.json();
             if (d.success) {
@@ -881,25 +880,25 @@ const convertEditST2AT = async () => {
 const convertEditRT2AT = async () => {
     const rt = $('editTokenRT').value.trim();
     if (!rt) return showToast('请先输入 Refresh Token', 'warn');
-    
+
     const btn = event.target.closest('button');
     const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = '转换中...';
-    
+
     try {
         const r = await apiRequest('/api/tokens/rt2at', {
             method: 'POST',
             body: JSON.stringify({ rt })
         });
-        
+
         if (r) {
             const d = await r.json();
             if (d.success) {
                 $('editTokenAT').value = d.access_token;
                 if (d.refresh_token) {
                     $('editTokenRT').value = d.refresh_token;
-                    if($('editRTRefreshHint')) $('editRTRefreshHint').classList.remove('hidden');
+                    if ($('editRTRefreshHint')) $('editRTRefreshHint').classList.remove('hidden');
                 }
                 showToast('转换成功', 'success');
             } else {
@@ -913,37 +912,173 @@ const convertEditRT2AT = async () => {
         btn.textContent = originalText;
     }
 };
-const exportTokens = () => {};
-const submitImportTokens = () => {};
+const exportTokens = () => { };
+const openImportModal = () => {
+    $('importModal').classList.remove('hidden');
+    // Load saved JSONBin settings
+    const savedId = localStorage.getItem('sora2_jsonbin_id');
+    const savedKey = localStorage.getItem('sora2_jsonbin_key');
+    if (savedId) $('importJsonBinId').value = savedId;
+    if (savedKey) $('importJsonBinKey').value = savedKey;
+};
+
+const closeImportModal = () => $('importModal').classList.add('hidden');
+
+const submitImportTokens = async () => {
+    const fileInput = $('importFile');
+    const binIdInput = $('importJsonBinId');
+    const binKeyInput = $('importJsonBinKey');
+    const mergeMode = $('importJsonBinMerge').checked; // Currently backend always appends/updates, so this is just UI for now or we can pass it if backend supported strict replace (backend is append/update by default)
+
+    let tokens = null;
+
+    const btn = $('importBtn');
+    const btnText = $('importBtnText');
+    const spinner = $('importBtnSpinner');
+
+    // Helper to set loading state
+    const setLoading = (isLoading) => {
+        if (btn) btn.disabled = isLoading;
+        if (spinner) spinner.classList.toggle('hidden', !isLoading);
+        if (btnText) btnText.textContent = isLoading ? '导入中...' : '导入';
+    };
+
+    try {
+        setLoading(true);
+
+        // 1. File Import
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const text = await file.text();
+            try {
+                tokens = JSON.parse(text);
+            } catch (e) {
+                throw new Error('JSON 文件格式错误');
+            }
+        }
+        // 2. JSONBin Import
+        else if (binIdInput.value.trim()) {
+            let binId = binIdInput.value.trim();
+            const binKey = binKeyInput.value.trim();
+
+            // Save to localStorage
+            localStorage.setItem('sora2_jsonbin_id', binId);
+            localStorage.setItem('sora2_jsonbin_key', binKey);
+
+            // Extract ID if full URL is given
+            // Support https://api.jsonbin.io/v3/b/<ID> or https://jsonbin.io/b/<ID>
+            const urlMatch = binId.match(/\/b\/([a-zA-Z0-9]+)/);
+            if (urlMatch) {
+                binId = urlMatch[1];
+            }
+
+            const url = `https://api.jsonbin.io/v3/b/${binId}?meta=false`;
+            const headers = {};
+            if (binKey) {
+                headers['X-Master-Key'] = binKey;
+                headers['X-Access-Key'] = binKey; // Try both or just Master
+            }
+
+            showToast('正在从 JSONBin 获取数据...', 'info');
+            const res = await fetch(url, { headers });
+
+            if (!res.ok) {
+                if (res.status === 401) throw new Error('JSONBin 访问被拒绝 (401)，请检查 Key');
+                if (res.status === 404) throw new Error('JSONBin ID 未找到 (404)');
+                throw new Error(`JSONBin 请求失败: ${res.status}`);
+            }
+
+            tokens = await res.json();
+
+            // JSONBin v3 with meta=false returns the data directly. 
+            // If it was wrapped in record (shouldn't be with meta=false but just in case)
+            if (tokens.record && Array.isArray(tokens.record)) {
+                tokens = tokens.record;
+            }
+        } else {
+            throw new Error('请选择文件或输入 JSONBin ID');
+        }
+
+        if (!Array.isArray(tokens)) {
+            throw new Error('导入的数据必须是 Token 数组');
+        }
+
+        // 3. Send to Backend
+        // Transform data to match ImportTokenItem if necessary
+        // The backend expects: email, access_token, etc.
+        // We assume the JSON format matches or we map it.
+        // Let's try to map common fields just in case
+        const mappedTokens = tokens.map(t => ({
+            email: t.email || `imported_${Date.now()}_${Math.random().toString(36).substr(2, 5)}@example.com`,
+            access_token: t.access_token || t.token, // Support both
+            session_token: t.session_token || t.st,
+            refresh_token: t.refresh_token || t.rt,
+            is_active: t.is_active !== false,
+            image_enabled: t.image_enabled !== false,
+            video_enabled: t.video_enabled !== false,
+            image_concurrency: t.image_concurrency || -1,
+            video_concurrency: t.video_concurrency || -1
+        })).filter(t => t.access_token); // Filter out invalid ones
+
+        if (mappedTokens.length === 0) {
+            throw new Error('未找到有效的 Token 数据 (需包含 access_token)');
+        }
+
+        const r = await apiRequest('/api/tokens/import', {
+            method: 'POST',
+            body: JSON.stringify({ tokens: mappedTokens })
+        });
+
+        if (r) {
+            const d = await r.json();
+            if (d.success) {
+                showToast(`导入成功: 新增 ${d.added}, 更新 ${d.updated}`, 'success');
+                closeImportModal();
+                refreshTokens();
+                // Clear file input
+                fileInput.value = '';
+            } else {
+                showToast(d.message || '导入失败', 'error');
+            }
+        }
+
+    } catch (e) {
+        showToast('导入失败: ' + e.message, 'error');
+    } finally {
+        setLoading(false);
+    }
+};
 const submitSora2Activate = async () => { /* Stub */ };
-const saveAdminConfig = async () => { 
+const saveAdminConfig = async () => {
     try {
         const r = await apiRequest('/api/admin/config', {
             method: 'POST',
             body: JSON.stringify({ error_ban_threshold: parseInt($('cfgErrorBan').value) || 3 })
         });
         if (r) showToast('配置保存成功', 'success');
-    } catch(e) { showToast('保存失败', 'error'); }
+    } catch (e) { showToast('保存失败', 'error'); }
 };
-const updateAdminPassword = async () => {};
-const updateAPIKey = async () => {};
-const toggleDebugMode = async () => {};
+const updateAdminPassword = async () => { };
+const updateAPIKey = async () => { };
+const toggleDebugMode = async () => { };
 const saveProxyConfig = async () => {
-     try{
-         const r=await apiRequest('/api/proxy/config',{method:'POST',body:JSON.stringify({proxy_enabled:$('cfgProxyEnabled').checked,proxy_url:$('cfgProxyUrl').value.trim()})});
-         if(r) showToast('代理配置保存成功','success');
-     }catch(e){showToast('保存失败','error')}
+    try {
+        const r = await apiRequest('/api/proxy/config', { method: 'POST', body: JSON.stringify({ proxy_enabled: $('cfgProxyEnabled').checked, proxy_url: $('cfgProxyUrl').value.trim() }) });
+        if (r) showToast('代理配置保存成功', 'success');
+    } catch (e) { showToast('保存失败', 'error') }
 };
 const saveWatermarkFreeConfig = async () => {
-     try{
-         const r=await apiRequest('/api/watermark-free/config',{method:'POST',body:JSON.stringify({
-             watermark_free_enabled:$('cfgWatermarkFreeEnabled').checked,
-             parse_method:$('cfgParseMethod').value,
-             custom_parse_url:$('cfgCustomParseUrl').value,
-             custom_parse_token:$('cfgCustomParseToken').value
-         })});
-         if(r) showToast('配置保存成功','success');
-     }catch(e){showToast('保存失败','error')}
+    try {
+        const r = await apiRequest('/api/watermark-free/config', {
+            method: 'POST', body: JSON.stringify({
+                watermark_free_enabled: $('cfgWatermarkFreeEnabled').checked,
+                parse_method: $('cfgParseMethod').value,
+                custom_parse_url: $('cfgCustomParseUrl').value,
+                custom_parse_token: $('cfgCustomParseToken').value
+            })
+        });
+        if (r) showToast('配置保存成功', 'success');
+    } catch (e) { showToast('保存失败', 'error') }
 };
 const saveCacheConfig = async () => { /* Stub */ };
 const saveGenerationTimeout = async () => { /* Stub */ };

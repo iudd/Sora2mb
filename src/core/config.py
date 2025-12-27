@@ -364,6 +364,17 @@ class Config:
             self._config["google_drive"] = {}
         self._config["google_drive"]["enabled"] = enabled
 
+    # JSONBin Configuration
+    @property
+    def jsonbin_bin_id(self) -> str:
+        """Get JSONBin Bin ID"""
+        return _get_env("JSONBIN_BIN_ID", "694f9d6cae596e708fb39e69")
+
+    @property
+    def jsonbin_master_key(self) -> str:
+        """Get JSONBin Master Key"""
+        return _get_env("JSONBIN_MASTER_KEY", "")
+
 
 # Global config instance
 config = Config()
