@@ -165,6 +165,7 @@ class VideoSyncRequest(BaseModel):
     """Request to manually sync and process the latest video"""
     limit: int = 1  # How many latest videos to check/process (default: 1)
     force_upload: bool = False  # If true, re-upload to drive even if already processed
+    stream: bool = True  # If true, return streaming response (default: True)
 
 class ChatCompletionChoice(BaseModel):
     index: int
