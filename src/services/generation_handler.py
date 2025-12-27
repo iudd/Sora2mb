@@ -912,9 +912,14 @@ class GenerationHandler:
                                                         access_token=token
                                                     )
                                                 else:
-                                                    # Use third-party parse (default)
-                                                    watermark_free_url = f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4"
-                                                    debug_logger.log_info("Using third-party parse server")
+                                                    # Use third-party parse (default) with backup URLs
+                                                    parse_urls = [
+                                                        f"https://oscdn2.dyysy.com/MP4/{post_id}.mp4",
+                                                        f"https://oscdn.dyysy.com/MP4/{post_id}.mp4",
+                                                        f"https://oscdn3.dyysy.com/MP4/{post_id}.mp4"
+                                                    ]
+                                                    watermark_free_url = parse_urls[0]  # Start with primary
+                                                    debug_logger.log_info(f"Using third-party parse servers: {len(parse_urls)} URLs available")
 
                                                 debug_logger.log_info(f"Watermark-free URL: {watermark_free_url}")
 
@@ -934,8 +939,11 @@ class GenerationHandler:
                                                         }
                                                     )
 
-                                                # 3) Wait for watermark-free file to become available (retry forever unless cancelled)
+                                                # 3) Wait for watermark-free file to become available (retry with fallback URLs)
                                                 ready_checks = 0
+                                                url_index = 0  # Track which URL we're trying
+                                                consecutive_failures = 0
+                                                
                                                 while True:
                                                     if cancel_event.is_set():
                                                         break
@@ -955,7 +963,21 @@ class GenerationHandler:
                                                         last_err = str(e)
 
                                                     if status_code == 200:
+                                                        if url_index > 0:
+                                                            debug_logger.log_info(f"Success with backup URL #{url_index + 1}")
                                                         break
+                                                    
+                                                    # Try backup URLs after 3 consecutive failures on current URL
+                                                    consecutive_failures += 1
+                                                    if parse_method != "custom" and consecutive_failures >= 3 and url_index < len(parse_urls) - 1:
+                                                        url_index += 1
+                                                        watermark_free_url = parse_urls[url_index]
+                                                        consecutive_failures = 0
+                                                        debug_logger.log_info(f"Switching to backup URL #{url_index + 1}: {watermark_free_url}")
+                                                        if stream:
+                                                            yield self._format_stream_chunk(
+                                                                reasoning_content=f"Trying backup URL #{url_index + 1}...\\n"
+                                                            )
 
                                                     wm_attempt += 1
                                                     if stream:

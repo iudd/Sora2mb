@@ -37,7 +37,7 @@ proxy_enabled = false
 proxy_url = ""
 
 [watermark_free]
-watermark_free_enabled = false
+watermark_free_enabled = true
 parse_method = "third_party"
 custom_parse_url = ""
 custom_parse_token = ""
@@ -47,7 +47,9 @@ at_auto_refresh_enabled = false
 
 # Google Drive 上传配置
 [google_drive]
-enabled = false
+enabled = true
+space_url = "https://leeykike-url2drive.hf.space"
+space_url_backup = "https://iyougame-url2drive.hf.space"
 space_url = "https://leeykike-url2drive.hf.space"
 space_url_backup = "https://iyougame-url2drive.hf.space"
 password = ""  # 通过环境变量 GOOGLE_DRIVE_PASSWORD 设置
