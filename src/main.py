@@ -1,6 +1,6 @@
 """Main application entry point"""
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +24,15 @@ app = FastAPI(
     description="OpenAI compatible API for Sora",
     version="1.0.0"
 )
+
+# Middleware to fix double slashes in URL path
+@app.middleware("http")
+async def fix_double_slashes(request: Request, call_next):
+    if "//" in request.url.path:
+        new_path = request.url.path.replace("//", "/")
+        request.scope["path"] = new_path
+    response = await call_next(request)
+    return response
 
 # CORS middleware
 app.add_middleware(
