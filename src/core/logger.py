@@ -74,6 +74,10 @@ class DebugLogger:
     ):
         """Log API request details to log.txt"""
         
+        # 检查 debug 开关
+        if not config.debug_enabled:
+            return
+        
         try:
             self._write_separator()
             self.logger.info(f"🔵 [REQUEST] {self._format_timestamp()}")
@@ -138,6 +142,10 @@ class DebugLogger:
     ):
         """Log API response details to log.txt"""
         
+        # 检查 debug 开关
+        if not config.debug_enabled:
+            return
+        
         try:
             self._write_separator()
             self.logger.info(f"🟢 [RESPONSE] {self._format_timestamp()}")
@@ -190,6 +198,10 @@ class DebugLogger:
     ):
         """Log API error details to log.txt"""
         
+        # 检查 debug 开关
+        if not config.debug_enabled:
+            return
+        
         try:
             self._write_separator()
             self.logger.info(f"🔴 [ERROR] {self._format_timestamp()}")
@@ -222,6 +234,9 @@ class DebugLogger:
     
     def log_info(self, message: str):
         """Log general info message to log.txt"""
+        # 检查 debug 开关
+        if not config.debug_enabled:
+            return
         try:
             self.logger.info(f"ℹ️  [{self._format_timestamp()}] {message}")
         except Exception as e:

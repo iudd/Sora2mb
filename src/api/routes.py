@@ -191,8 +191,9 @@ async def create_chat_completion(
                         video=video_data,
                         remix_target_id=remix_target_id,
                         stream=True
-                    ):
-                        yield chunk
+                    ):\n                        yield chunk
+                        # 强制刷新 Hugging Face Spaces 缓冲区
+                        yield ": heartbeat\n\n"
                 except Exception as e:
                     # Return OpenAI-compatible error format
                     error_response = {
@@ -211,9 +212,11 @@ async def create_chat_completion(
                 generate(),
                 media_type="text/event-stream",
                 headers={
-                    "Cache-Control": "no-cache",
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
                     "Connection": "keep-alive",
-                    "X-Accel-Buffering": "no"
+                    "X-Accel-Buffering": "no",
+                    "Transfer-Encoding": "chunked",
+                    "Content-Encoding": "none"
                 }
             )
         else:
@@ -288,7 +291,14 @@ async def sync_latest_video(
     if request.stream:
         return StreamingResponse(
             generation_handler.sync_latest_video(limit=request.limit, stream=True, force_upload=request.force_upload),
-            media_type="text/event-stream"
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+                "Transfer-Encoding": "chunked",
+                "Content-Encoding": "none"
+            }
         )
     else:
         # TODO: Implement non-streaming response if needed
