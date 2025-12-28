@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive Token 获取工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .step h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .step p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            background: #f0f7ff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .token-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+
+        .warning p {
+            color: #856404;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔐 Google Drive Token 获取工具</h1>
+        <p class="subtitle">按照以下步骤获取Google Drive API的Refresh Token</p>
+
+        <div class="step">
+            <h3>步骤 1: 获取Client ID和Secret</h3>
+            <p>1. 访问 <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></p>
+            <p>2. 创建项目并启用 Google Drive API</p>
+            <p>3. 创建 OAuth 2.0 客户端ID（类型：桌面应用）</p>
+            <p>4. 下载凭据或复制 Client ID 和 Client Secret</p>
+        </div>
+
+        <div class="input-group">
+            <label for="clientId">Client ID</label>
+            <input type="text" id="clientId" placeholder="xxx.apps.googleusercontent.com">
+        </div>
+
+        <div class="input-group">
+            <label for="clientSecret">Client Secret</label>
+            <input type="text" id="clientSecret" placeholder="GOCSPX-xxx">
+        </div>
+
+        <button class="btn" onclick="startAuth()">开始授权</button>
+
+        <div class="step" style="margin-top: 30px;">
+            <h3>步骤 2: 使用OAuth Playground</h3>
+            <p>点击上方按钮后，会打开Google OAuth 2.0 Playground</p>
+            <p>按照页面指引完成授权，然后复制 <code>refresh_token</code></p>
+        </div>
+
+        <div class="input-group" style="margin-top: 20px;">
+            <label for="refreshToken">Refresh Token（从Playground复制）</label>
+            <input type="text" id="refreshToken" placeholder="1//xxx...">
+        </div>
+
+        <button class="btn" onclick="showResult()" style="background: #28a745;">生成配置</button>
+
+        <div class="result" id="result">
+            <h3>✅ 配置信息</h3>
+            <p>将以下信息添加到Hugging Face Spaces的环境变量：</p>
+            <div class="token-box" id="configOutput"></div>
+            <button class="copy-btn" onclick="copyConfig()">📋 复制配置</button>
+        </div>
+
+        <div class="warning">
+            <p><strong>⚠️ 安全提示：</strong></p>
+            <p>• 不要将这些凭据分享给他人</p>
+            <p>• 不要提交到公开的Git仓库</p>
+            <p>• 只在Hugging Face Spaces的私密环境变量中使用</p>
+        </div>
+    </div>
+
+    <script>
+        function startAuth() {
+            const clientId = document.getElementById('clientId').value.trim();
+            const clientSecret = document.getElementById('clientSecret').value.trim();
+
+            if (!clientId || !clientSecret) {
+                alert('请先填写Client ID和Client Secret');
+                return;
+            }
+
+            // 保存到localStorage
+            localStorage.setItem('gdrive_client_id', clientId);
+            localStorage.setItem('gdrive_client_secret', clientSecret);
+
+            // 打开OAuth Playground
+            const playgroundUrl = 'https://developers.google.com/oauthplayground/';
+            window.open(playgroundUrl, '_blank');
+
+            alert('已打开OAuth Playground\n\n请按照以下步骤操作：\n\n1. 点击右上角齿轮⚙️\n2. 勾选"Use your own OAuth credentials"\n3. 输入你的Client ID和Secret\n4. 在左侧选择"Drive API v3"\n5. 勾选 https://www.googleapis.com/auth/drive.file\n6. 点击"Authorize APIs"\n7. 完成授权后，点击"Exchange authorization code for tokens"\n8. 复制refresh_token的值，粘贴到下方输入框');
+        }
+
+        function showResult() {
+            const clientId = document.getElementById('clientId').value.trim();
+            const clientSecret = document.getElementById('clientSecret').value.trim();
+            const refreshToken = document.getElementById('refreshToken').value.trim();
+
+            if (!clientId || !clientSecret || !refreshToken) {
+                alert('请填写所有字段');
+                return;
+            }
+
+            const config = `GOOGLE_DRIVE_CLIENT_ID=${clientId}
+GOOGLE_DRIVE_CLIENT_SECRET=${clientSecret}
+GOOGLE_DRIVE_REFRESH_TOKEN=${refreshToken}`;
+
+            document.getElementById('configOutput').textContent = config;
+            document.getElementById('result').style.display = 'block';
+
+            // 滚动到结果
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyConfig() {
+            const config = document.getElementById('configOutput').textContent;
+            navigator.clipboard.writeText(config).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 已复制！';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // 页面加载时恢复保存的值
+        window.onload = function () {
+            const savedClientId = localStorage.getItem('gdrive_client_id');
+            const savedClientSecret = localStorage.getItem('gdrive_client_secret');
+
+            if (savedClientId) document.getElementById('clientId').value = savedClientId;
+            if (savedClientSecret) document.getElementById('clientSecret').value = savedClientSecret;
+        };
+    </script>
+</body>
+
+</html>

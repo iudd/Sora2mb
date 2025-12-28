@@ -687,8 +687,6 @@ class GenerationHandler:
         start_time = time.time()
         last_heartbeat_time = start_time  # Track last heartbeat for image generation
         heartbeat_interval = 10  # Send heartbeat every 10 seconds for image generation
-        last_status_output_time = start_time  # Track last status output time for video generation
-        video_status_interval = 5  # Output status every 5 seconds for video generation (was 30)
 
         debug_logger.log_info(f"Starting task polling: task_id={task_id}, is_video={is_video}, timeout={timeout}s, max_attempts={max_attempts}")
 
@@ -748,13 +746,12 @@ class GenerationHandler:
                             last_progress = progress_pct
                             status = task.get("status", "processing")
 
-                            # Output status every 30 seconds (not just when progress changes)
-                            current_time = time.time()
-                            if stream and (current_time - last_status_output_time >= video_status_interval):
-                                last_status_output_time = current_time
+                            # Send progress update to client on every poll (removed interval restriction)
+                            if stream:
                                 debug_logger.log_info(f"Task {task_id} progress: {progress_pct}% (status: {status})")
                                 yield self._format_stream_chunk(
-                                    reasoning_content=f"**Video Generation Progress**: {progress_pct}% ({status})\\n"
+                                    reasoning_content=f"**Video Generation Progress**: {progress_pct}% ({status})\\n",
+                                    extra={"progress": progress_pct / 100.0}
                                 )
                             break
 
@@ -1007,6 +1004,7 @@ class GenerationHandler:
                                                     yield self._format_stream_chunk(
                                                         reasoning_content=(
                                                             f"Watermark-free URL is ready (checked {ready_checks} times).\\n"
+                                                            f"📹 **Watermark-free URL**: {watermark_free_url}\\n"
                                                             f"Now {'caching' if config.cache_enabled else 'returning'} watermark-free video...\\n"
                                                         ),
                                                         extra={
@@ -1015,7 +1013,13 @@ class GenerationHandler:
                                                                 "attempt": wm_attempt,
                                                                 "can_cancel": wm_attempt >= 3,
                                                                 "task_id": task_id,
-                                                            }
+                                                            },
+                                                            "output": [{
+                                                                "url": watermark_free_url,
+                                                                "type": "video",
+                                                                "task_id": task_id,
+                                                                "watermark_free": True,
+                                                            }]
                                                         }
                                                     )
                                                 # 4) Upload to Google Drive or cache locally
@@ -1054,7 +1058,19 @@ class GenerationHandler:
                                                         if local_url:
                                                             if stream:
                                                                 yield self._format_stream_chunk(
-                                                                    reasoning_content=f"✅ Video uploaded to Google Drive successfully!\\n"
+                                                                    reasoning_content=(
+                                                                        f"✅ Video uploaded to Google Drive successfully!\\n"
+                                                                        f"🔗 **Google Drive URL**: {local_url}\\n"
+                                                                    ),
+                                                                    extra={
+                                                                        "output": [{
+                                                                            "url": local_url,
+                                                                            "type": "video",
+                                                                            "task_id": task_id,
+                                                                            "watermark_free": True,
+                                                                            "source": "google_drive"
+                                                                        }]
+                                                                    }
                                                                 )
                                                             
                                                             # Delete the published post after upload (best-effort)
