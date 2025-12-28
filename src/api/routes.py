@@ -191,7 +191,8 @@ async def create_chat_completion(
                         video=video_data,
                         remix_target_id=remix_target_id,
                         stream=True
-                    ):\n                        yield chunk
+                    ):
+                        yield chunk
                         # 强制刷新 Hugging Face Spaces 缓冲区
                         yield ": heartbeat\n\n"
                 except Exception as e:
